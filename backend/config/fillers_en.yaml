@@ -1,0 +1,78 @@
+# fillers_en.yaml — léxico de muletillas para respuestas en INGLÉS
+#
+# Contrato: {filled_pauses: [str], discourse_markers: [{token, note}], sources: [ids]}
+# Los IDs [Knn] se resuelven en knowledge/SOURCES.md (consultadas el 2026-10-11).
+#
+# Dos clases:
+#   - filled_pauses: pausas llenas. Cuentan SIEMPRE como muletilla.
+#   - discourse_markers: marcadores discursivos. Son muletilla solo A VECES.
+#     La `note` dice cuándo contarlos. Si no se puede decidir el contexto, reportarlos
+#     aparte (fillers_detail) y no sumarlos a fillers_per_min.
+#     La separación entre pausas llenas (uh, um) y marcadores discursivos
+#     (I mean, you know, like) sigue a Laserna, Seih & Pennebaker 2014, vía [K29].
+#
+# Nota de STT: Whisper con `initial_prompt` de muletillas
+# conserva "um". Sin esa pista, las pausas llenas se pierden.
+
+filled_pauses:
+  # Pausas llenas del inglés: "uh" anuncia una demora breve y "um" una más larga.
+  # En inglés británico se escriben "er"/"erm" [K28].
+  - uh
+  - um
+  - er
+  - erm
+  # Variantes ortográficas que puede producir el STT. No vienen de la fuente: son
+  # grafías alternativas de uh/um.
+  # ⚠ heurística provisoria.
+  - uhm
+  - uhh
+  - umm
+  - hmm
+  - mm
+  # Transferencia desde la L1 (español). Los hablantes de inglés como L2 suelen
+  # importar las pausas llenas de su primera lengua; Clark & Fox Tree lo observan
+  # en hablantes nativos de español [K28]. Las del español son eh, em, este, pues [K28][K30].
+  # Para un hispanohablante que responde en inglés, cuentan como pausa llena.
+  - eh
+  - em
+  - ehm
+
+discourse_markers:
+  - token: "like"
+    note: >-
+      Marcador discursivo según [K29]. Contar solo si no cumple función gramatical:
+      no es verbo ("I like Rust") ni preposición o comparación ("a service like this").
+      Pistas: va entre comas o pausas, o inicia cláusula ("it was, like, slow").
+      ⚠ La regla de contexto es heurística.
+  - token: "you know"
+    note: >-
+      Marcador discursivo según [K29]. Contar si funciona como apelación ("it was, you
+      know, hard"), no como pregunta real ni como verbo con objeto ("you know Rust?").
+  - token: "I mean"
+    note: >-
+      Marcador discursivo según [K29]. A menudo introduce una reformulación legítima.
+      Contar solo si se repite o no reformula nada.
+  - token: "so"
+    note: >-
+      Estudiado como marcador discursivo de la conversación en inglés [K32] (solo se
+      consultó el registro bibliográfico). Contar si abre la respuesta o una cláusula
+      sin valor consecutivo ("So, um, I…"). No contar el uso causal ("so I added a test").
+      ⚠ La regla es heurística.
+  - token: "well"
+    note: "⚠ sin fuente — heurística. Contar al inicio de turno o de cláusula seguido de pausa. No contar el adverbio ('it worked well')."
+  - token: "basically"
+    note: "⚠ sin fuente — heurística. Contar si se repite (más de 1 vez por respuesta) o no resume nada."
+  - token: "actually"
+    note: "⚠ sin fuente — heurística. Contar si se repite sin valor contrastivo."
+  - token: "right"
+    note: "⚠ sin fuente — heurística. Contar como tag ('…, right?') o al inicio de cláusula. No contar el adjetivo ('the right index')."
+  - token: "okay"
+    note: "⚠ sin fuente — heurística. Contar al inicio de respuesta o cláusula como arranque ('Okay, so…')."
+  - token: "kind of"
+    note: "⚠ sin fuente — heurística. Contar como atenuador vacío ('it was kind of slow'). No contar el sustantivo ('this kind of bug')."
+  - token: "sort of"
+    note: "⚠ sin fuente — heurística. Igual que 'kind of'."
+  - token: "literally"
+    note: "⚠ sin fuente — heurística. Contar si se usa como intensificador vacío."
+
+sources: [K28, K29, K30, K32]

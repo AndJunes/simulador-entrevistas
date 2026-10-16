@@ -1,0 +1,130 @@
+# form_targets.yaml — rangos objetivo de FORMA (métricas deterministas)
+#
+# Regla (BR-5): cada valor lleva `source` con IDs de knowledge/SOURCES.md,
+#   o `source: null  # ⚠ heurística provisoria` si no hay fuente externa.
+#
+# Fuentes consultadas: 2026-10-11. Los IDs [Knn] se resuelven en knowledge/SOURCES.md.
+#
+# Estructura (contrato con la app):
+#   duration_s:           {pitch, behavioral, screening_other} -> {min, max, source}
+#   wpm:                  {en, es} -> {min, max, source}
+#   long_pause_s:         {value, source}
+#   first_word_latency_s: {comfortable_max, source}
+
+duration_s:
+
+  # "Tell me about yourself" / presentación.
+  #   - Texas Tech Career Center: 60–90 s, y cronometrarse [K05].
+  #   - UT Austin McCombs: 60–90 s [K06].
+  #   - Referencia: MIT CAPD da 30–60 s para un elevator pitch genérico (ferias,
+  #     networking) [K03]. Para la respuesta de entrevista se usa 60–90 s.
+  pitch:
+    min: 60
+    max: 90
+    source: [K05, K06]
+
+  # Respuesta conductual STAR.
+  #   - 60–90 s es el objetivo de la preparación del usuario para el call del 13-10-2026.
+  #     No se encontró fuente externa para ese rango exacto.
+  #   - Techo externo: CUNY Career Services dice que una historia STAR dura unos
+  #     2 minutos y hay que practicar para no pasarse [K18]. Usar 120 s como
+  #     "demasiado larga" si se implementa un hard_max.
+  #   - Reparto interno orientativo (no es un rango de duración):
+  #     S 20 %, T 10 %, A 60 %, R 10 % [K01].
+  behavioral:
+    min: 60
+    max: 90
+    source: null  # ⚠ heurística provisoria (objetivo de la preparación del usuario; techo de ~120 s por [K18])
+
+  # Resto de preguntas del screening: motivación, "qué sabés de nosotros",
+  # disponibilidad, tarifa, otros procesos.
+  #   - No hay fuente con duraciones por tipo.
+  #   - Rangos de trabajo (heurísticos) por subtipo, ver knowledge/screening/en/preguntas.md:
+  #       motivación ~45–75 s · logística 15–30 s · compensación 15–40 s · otros procesos 10–25 s.
+  #   - Este rango global cubre de lo más corto a lo más largo.
+  screening_other:
+    min: 15
+    max: 75
+    source: null  # ⚠ heurística provisoria
+
+wpm:
+  # Medición: palabras / (fin de la última palabra − inicio de la primera palabra),
+  # con las pausas internas incluidas.
+  # IMPORTANTE: el valor depende del denominador. Sobre el mismo corpus (Switchboard)
+  # da 164, 196 o 236 wpm según cómo se cuente el tiempo [K26]. Mantener siempre la
+  # misma definición.
+  #
+  # Referencias en inglés [K26] (Yuan, Liberman & Cieri 2006, conversación telefónica):
+  #   - Switchboard: 196 wpm (tiempo total) · 236 wpm (neto, sin silencios) · 164 wpm (por turno).
+  #   - Fisher, entre desconocidos: de 152 a casi 170 wpm según el tema.
+  #     Con desconocidos se usan turnos más largos y se habla más lento.
+  #   - Los no nativos hablan más lento que los nativos (citado en [K26]).
+  #
+  # Fluidez percibida en L2: las pausas y la velocidad son los mejores predictores
+  # de la fluidez percibida [K21]. Por eso el wpm es una señal útil, pero no
+  # alcanza por sí solo.
+  #
+  # Validación con voz real del usuario (ES): 120 y 169 wpm.
+  en:
+    min: 120
+    max: 170
+    source: null  # ⚠ heurística provisoria. El techo de 170 se apoya en Fisher [K26]; el piso de 120 es juicio propio (L2, respuesta formal)
+
+  # Español: no se encontró fuente en palabras por minuto.
+  #   - Solo hay tasa silábica en LECTURA en voz alta [K27]:
+  #     español 7,82 sílabas/s vs inglés 6,19 sílabas/s.
+  #   - No es habla espontánea y no se convierte a wpm, porque las palabras del
+  #     español tienen más sílabas en promedio. Por eso no se copia la banda del inglés.
+  es:
+    min: 120
+    max: 180
+    source: null  # ⚠ heurística provisoria (sin fuente en wpm; ver [K27] solo como contexto)
+
+long_pause_s:
+  # Pausa silenciosa DENTRO de la respuesta (no la latencia inicial).
+  #
+  # Mínimo para contar algo como pausa: 250 ms.
+  #   - En fluidez L2, los umbrales de 250–300 ms dan la mayor correlación con la
+  #     competencia lingüística; 250 ms es la elección tradicional [K22].
+  #   - Entre el 22 y el 27 % de las pausas silenciosas duran menos de 250 ms [K22].
+  #
+  # Contexto sobre "pausa larga":
+  #   - Silencios entre hablantes (gaps): moda ~200 ms; el umbral de detección
+  #     ronda los 200 ms; el 82–95 % de los intervalos entre turnos dura menos de 1 s [K25].
+  #   - Pausas dentro del turno (Map Task): más de 1 s = 28–31 % de las pausas [K25].
+  #     O sea, las pausas de 1 s son NORMALES al hablar. Marcarlas todas generaría ruido.
+  #   - El MCER describe al B2 como "pocas pausas notablemente largas", sin dar un
+  #     número [K19].
+  #
+  # Valor elegido:
+  #   - 2,0 s para "pausa larga" (antes era 2,5 s provisorio).
+  #   - Las pausas deliberadas del usuario midieron ~1–1,4 s.
+  #   - Si se agrega un nivel "notable", usar 1,0 s solo informativo, sin penalizar.
+  value: 2.0
+  source: null  # ⚠ heurística provisoria (contexto en [K22][K25][K19]; no hay umbral publicado para entrevistas)
+
+first_word_latency_s:
+  # Tiempo desde que termina la pregunta hasta la primera palabra.
+  #
+  # Conversación casual (no entrevista):
+  #   - En preguntas sí/no, en 10 lenguas, la media es +208 ms; la moda es 0 ms;
+  #     la mediana en inglés es 0 ms [K23].
+  #   - Los pedidos de información son más lentos que otras preguntas [K23].
+  #     Las preguntas de entrevista son abiertas, así que más latencia es esperable.
+  #   - Desde ~700 ms de silencio predominan las respuestas "no preferidas" (rechazos,
+  #     respuestas con reservas) [K24]. En conversación, un silencio largo se lee como
+  #     señal de problema. Por teléfono no hay lenguaje corporal que lo compense.
+  #
+  # Guía de entrevistas:
+  #   - UT Austin: tomarse "un par de segundos" para pensar; si hace falta, pedir
+  #     un momento [K07].
+  #   - MIT CAPD: está bien pausar para pensar antes de responder [K02].
+  #   - Flinders University: rutina Listen–Pause–Think [K39].
+  #   - Duke Career Center: por teléfono, verbalizar lo que se piensa durante la pausa [K38].
+  #
+  # Valor elegido:
+  #   - 3,0 s como máximo cómodo en silencio.
+  #   - Pasado ese tiempo, usar una frase puente honesta
+  #     (ver knowledge/comun/en/recuperacion.md).
+  comfortable_max: 3.0
+  source: null  # ⚠ heurística provisoria ("un par de segundos" [K07] es cualitativo; [K23][K24] son de conversación casual)

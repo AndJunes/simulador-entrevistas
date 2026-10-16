@@ -1,0 +1,77 @@
+# fillers_es.yaml — léxico de muletillas para respuestas en ESPAÑOL
+#
+# Contrato: {filled_pauses: [str], discourse_markers: [{token, note}], sources: [ids]}
+# Los IDs [Knn] se resuelven en knowledge/SOURCES.md (consultadas el 2026-10-11).
+#
+# Dos clases:
+#   - filled_pauses: pausas llenas. Cuentan SIEMPRE.
+#   - discourse_markers: marcadores del discurso. Tienen funciones legítimas
+#     (estructurar, reformular, conectar) [K31]; solo son muletilla según el
+#     contexto. La `note` dice cuándo contarlos.
+#
+# Nota de STT: sin `initial_prompt` de muletillas,
+# "eh" se transcribe "he". Considerar "he" como "eh" cuando aparece aislado y no
+# como auxiliar ("he trabajado").
+
+filled_pauses:
+  # Pausas llenas del español: eh y em [K28][K30].
+  - eh
+  - em
+  - ehm
+  # Grafías alargadas o variantes que puede producir el STT.
+  # ⚠ heurística provisoria.
+  - ehh
+  - mmm
+  - mm
+  # Transferencia por contacto con el inglés: los hispanohablantes con más contacto
+  # con el inglés usan más ah/am y uh/um [K30].
+  - ah
+  - am
+  - uh
+  - um
+
+discourse_markers:
+  - token: "este"
+    note: >-
+      Relleno derivado del demostrativo, citado entre los del español [K28]. El CVC lo
+      lista entre los marcadores conversacionales metadiscursivos [K31]. Contar solo
+      si NO va seguido de un sustantivo o adjetivo ("este proyecto" no cuenta). Pistas:
+      va aislado, entre pausas o alargado ("esteee"). ⚠ La regla de contexto es heurística.
+  - token: "pues"
+    note: >-
+      Relleno citado en [K28]. Según el CVC es comentador y conector consecutivo [K31].
+      Contar al inicio de respuesta o cláusula seguido de pausa ("pues… nada"). No contar
+      el valor consecutivo ("…, pues el servicio caía").
+  - token: "o sea"
+    note: >-
+      Reformulador explicativo según [K31]: es legítimo si de verdad reformula.
+      Contar si se repite (más de 1 vez por respuesta) o no introduce ninguna reformulación.
+  - token: "bueno"
+    note: >-
+      Marcador de modalidad y metadiscursivo según [K31]. Al inicio de turno suele
+      funcionar como arranque legítimo. Contar solo
+      a partir de la segunda aparición en la respuesta o en medio de una cláusula.
+      ⚠ La regla es heurística.
+  - token: "entonces"
+    note: >-
+      Estructurador del discurso oral o conector consecutivo según [K31]. Contar solo
+      si se encadena repetidamente sin relación de consecuencia ("entonces… entonces…").
+  - token: "eh"
+    note: >-
+      Como apéndice interrogativo ("¿eh?") es marcador conversacional [K31], no pausa llena.
+      Si va al final con entonación de pregunta, reportarlo aparte y no contarlo como
+      pausa llena.
+  - token: "digamos"
+    note: "⚠ sin fuente — heurística. Contar si es atenuador vacío y repetido."
+  - token: "tipo"
+    note: "⚠ sin fuente — heurística. Contar como aproximador coloquial ('era, tipo, lento'). No contar el sustantivo ('el tipo de dato')."
+  - token: "como que"
+    note: "⚠ sin fuente — heurística. Contar como atenuador vacío ('como que no andaba')."
+  - token: "¿no?"
+    note: "⚠ sin fuente — heurística. Apéndice de confirmación. Contar si aparece más de 2 veces por respuesta."
+  - token: "nada"
+    note: "⚠ sin fuente — heurística. Contar como arranque o cierre vacío ('nada, que…', 'y nada'). No contar el pronombre."
+  - token: "la verdad"
+    note: "⚠ sin fuente — heurística. Contar si se repite como muletilla de arranque."
+
+sources: [K28, K30, K31]
