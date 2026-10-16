@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { api, type Annotation, type Coaching, type Criterion, type EvaluationBody, type Lang, LEVEL_LABEL, type Metrics, type Question, type Transcript } from "@/lib/api"
+import { anchor, answerWords } from "@/lib/transcript"
 import { cn } from "@/lib/utils"
 import { AudioPlayer, ScoreDots } from "./common"
 
@@ -56,25 +57,6 @@ export function ExampleLegend() {
 }
 
 // Anclaje de comentarios
-
-const norm = (w: string) => w.toLowerCase().replace(/[^\p{L}\p{N}%']/gu, "")
-
-/** Ubica cada cita en la lista de palabras (secuencia exacta normalizada; si no, por sus primeras 3 palabras). */
-function anchor(words: { word: string }[], quote: string): [number, number] | null {
-  const W = words.map((w) => norm(w.word))
-  const Q = quote.split(/\s+/).map(norm).filter(Boolean)
-  if (!Q.length) return null
-  for (let i = 0; i + Q.length <= W.length; i++) {
-    let ok = true
-    for (let k = 0; k < Q.length; k++) if (W[i + k] !== Q[k]) { ok = false; break }
-    if (ok) return [i, i + Q.length - 1]
-  }
-  const head = Q.slice(0, Math.min(3, Q.length))
-  for (let i = 0; i + head.length <= W.length; i++) {
-    if (head.every((h, k) => W[i + k] === h)) return [i, Math.min(W.length - 1, i + Q.length - 1)]
-  }
-  return null
-}
 
 /** Agrupa palabras consecutivas con el mismo comentario en un solo tramo (resaltado continuo). */
 function groups(n: number, wordAnn: Map<number, number>): { ann: number | null; idx: number[] }[] {
@@ -154,7 +136,7 @@ export function CallChat({ question, transcript, metrics, evaluation, coaching, 
   interviewer?: string
 }) {
   const [active, setActive] = useState<number | null>(null)
-  const words = transcript?.words ?? []
+  const { words, timed } = useMemo(() => answerWords(transcript), [transcript])
   const anns: (Annotation & { span: [number, number] | null })[] = useMemo(
     () => (evaluation?.annotations ?? []).map((a) => ({ ...a, span: anchor(words, a.quote) })),
     [evaluation, words],
@@ -165,9 +147,10 @@ export function CallChat({ question, transcript, metrics, evaluation, coaching, 
     anns.forEach((a, n) => { if (a.span) for (let i = a.span[0]; i <= a.span[1]; i++) if (!m.has(i)) m.set(i, n) })
     return m
   }, [anns])
-  const fill = new Set(metrics?.filler_word_idx ?? [])
-  const low = new Set(metrics?.low_confidence_idx ?? [])
-  const pauses = [...(metrics?.long_pauses ?? [])]
+  // Muletillas, pausas y baja confianza usan índices de las palabras con tiempo: sin tiempo no se marcan
+  const fill = new Set(timed ? metrics?.filler_word_idx ?? [] : [])
+  const low = new Set(timed ? metrics?.low_confidence_idx ?? [] : [])
+  const pauses = timed ? [...(metrics?.long_pauses ?? [])] : []
 
   return (
     <div className="flex flex-col gap-4" aria-label="Chat de la llamada">
@@ -257,7 +240,7 @@ export function CallChat({ question, transcript, metrics, evaluation, coaching, 
                     {a.kind === "bien" ? <ThumbsUpIcon className="size-3.5" /> : <PencilIcon className="size-3.5" />}
                     {a.kind === "bien" ? "Bien" : "Para mejorar"}
                   </span>
-                  <span className="line-clamp-2 text-xs italic text-muted-foreground">“{a.quote}”{!a.span && " (fragmento no ubicado en la transcripción)"}</span>
+                  <span className="line-clamp-2 text-xs italic text-muted-foreground">“{a.quote}”{!a.span && " (fragmento no ubicado en tu respuesta)"}</span>
                   <span>{a.comment}</span>
                   {a.fix && <span className="rounded-md bg-muted px-2 py-1"><span className="text-muted-foreground">Mejor: </span>“<ExampleText text={a.fix} />”</span>}
                 </div>
@@ -297,9 +280,11 @@ export function CallChat({ question, transcript, metrics, evaluation, coaching, 
       {transcript && !compact && (
         <p className="flex flex-wrap gap-x-3 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
           <span><span className="rounded-sm bg-accent px-1 underline">resaltado</span> comentario</span>
-          <span><span className="font-semibold underline decoration-wavy">eh</span> muletilla</span>
-          <span><span className="rounded bg-pause px-1 font-mono">⏸</span> pausa larga</span>
-          <span><span className="underline decoration-dotted">palabra</span> posible error de transcripción</span>
+          {timed && <>
+            <span><span className="font-semibold underline decoration-wavy">eh</span> muletilla</span>
+            <span><span className="rounded bg-pause px-1 font-mono">⏸</span> pausa larga</span>
+            <span><span className="underline decoration-dotted">palabra</span> posible error de transcripción</span>
+          </>}
         </p>
       )}
     </div>
