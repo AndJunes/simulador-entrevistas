@@ -5,6 +5,19 @@ analiza qué pide el puesto y qué evidencia muestra tu CV, arma un banco de pre
 (o por escrito). Después te devuelve feedback sobre **qué decís** (competencias y criterios con escala anclada) y
 **cómo sonás** (latencia, ritmo, pausas, muletillas).
 
+## Demo
+
+![Recorrido por la aplicación: nueva postulación, resumen, requisitos, práctica con devolución, simulacro e informe](docs/demo.gif)
+
+*Recorrido acelerado con los datos ficticios de [`examples/`](examples/): crear una postulación, revisar requisitos y
+evidencia, practicar una pregunta respondiendo por escrito, hacer un simulacro y ver el informe.*
+
+| Resumen | Requisitos |
+|---|---|
+| ![Resumen de la postulación](docs/demo-resumen.png) | ![Requisitos con filtros y detalle](docs/demo-requisitos.png) |
+| **Devolución de una práctica** | **Informe del simulacro** |
+| ![Devolución por criterio con citas](docs/demo-devolucion.png) | ![Informe por competencia](docs/demo-informe.png) |
+
 ## Problema que resuelve
 
 Preparar una entrevista suele hacerse con preguntas genéricas y sin feedback. Este proyecto:
