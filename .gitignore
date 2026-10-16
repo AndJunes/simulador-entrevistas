@@ -1,0 +1,40 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Audio temporal (se borra tras procesar, igual no se versiona)
+.tmp/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store
+
+# Datos personales (CV, postulaciones). Nunca al repo.
+data/private/
+.cache/
+
+# Audios y documentos de prueba locales: nunca al repo
+frontend/public/__dev_audio/
+frontend/public/__dev_docs/
+
+# Resultados de Playwright
+frontend/test-results/
+frontend/playwright-report/
+
+# Resultados de corridas de evals (se regeneran con los scripts de evals/)
+evals/results/
+
+# Logs y configuración local de editores
+*.log
+.vscode/
+.idea/

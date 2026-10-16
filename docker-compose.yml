@@ -1,0 +1,24 @@
+# Solo la base de datos va en Docker.
+# El backend corre nativo en macOS porque Whisper (MLX) necesita la GPU Metal de Apple Silicon,
+# que no está disponible dentro de un contenedor Linux.
+services:
+  db:
+    image: pgvector/pgvector:0.8.7-pg17   # imagen oficial de pgvector, versión fijada
+    container_name: simulador-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"   # solo localhost
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  pgdata:
