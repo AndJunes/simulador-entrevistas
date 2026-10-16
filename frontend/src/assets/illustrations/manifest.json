@@ -1,0 +1,162 @@
+{
+ "ai-agent": {
+  "w": 960,
+  "h": 751,
+  "kb": 11
+ },
+ "ai-answers": {
+  "w": 960,
+  "h": 999,
+  "kb": 32
+ },
+ "ai-chat": {
+  "w": 960,
+  "h": 1262,
+  "kb": 29
+ },
+ "ai-research-assistant": {
+  "w": 960,
+  "h": 726,
+  "kb": 35
+ },
+ "ai-response": {
+  "w": 960,
+  "h": 1305,
+  "kb": 43
+ },
+ "ai-voice-interface": {
+  "w": 960,
+  "h": 1148,
+  "kb": 33
+ },
+ "artificial-intelligence": {
+  "w": 960,
+  "h": 1488,
+  "kb": 38
+ },
+ "chat-bot": {
+  "w": 960,
+  "h": 861,
+  "kb": 18
+ },
+ "chat-with-ai": {
+  "w": 960,
+  "h": 691,
+  "kb": 26
+ },
+ "detailed-answer": {
+  "w": 960,
+  "h": 853,
+  "kb": 58
+ },
+ "futuristic-interface": {
+  "w": 960,
+  "h": 1110,
+  "kb": 41
+ },
+ "voice-assistant": {
+  "w": 960,
+  "h": 841,
+  "kb": 25
+ },
+ "business-chat": {
+  "w": 960,
+  "h": 652,
+  "kb": 37
+ },
+ "candidate": {
+  "w": 960,
+  "h": 632,
+  "kb": 28
+ },
+ "hire": {
+  "w": 960,
+  "h": 447,
+  "kb": 8
+ },
+ "hiring": {
+  "w": 960,
+  "h": 872,
+  "kb": 15
+ },
+ "interview": {
+  "w": 960,
+  "h": 738,
+  "kb": 32
+ },
+ "job-hunt": {
+  "w": 960,
+  "h": 933,
+  "kb": 25
+ },
+ "nice-to-meet-you": {
+  "w": 960,
+  "h": 1335,
+  "kb": 26
+ },
+ "online-cv": {
+  "w": 960,
+  "h": 789,
+  "kb": 18
+ },
+ "online-meeting": {
+  "w": 960,
+  "h": 875,
+  "kb": 27
+ },
+ "questions": {
+  "w": 960,
+  "h": 688,
+  "kb": 51
+ },
+ "resume": {
+  "w": 960,
+  "h": 898,
+  "kb": 18
+ },
+ "screening-resumes": {
+  "w": 960,
+  "h": 675,
+  "kb": 9
+ },
+ "video-call": {
+  "w": 960,
+  "h": 751,
+  "kb": 11
+ },
+ "data-reports": {
+  "w": 960,
+  "h": 770,
+  "kb": 29
+ },
+ "feedback": {
+  "w": 960,
+  "h": 731,
+  "kb": 25
+ },
+ "online-test": {
+  "w": 960,
+  "h": 751,
+  "kb": 12
+ },
+ "predictive-analytics": {
+  "w": 960,
+  "h": 1236,
+  "kb": 27
+ },
+ "progress-tracking": {
+  "w": 960,
+  "h": 921,
+  "kb": 25
+ },
+ "secure-login": {
+  "w": 960,
+  "h": 679,
+  "kb": 25
+ },
+ "security-on": {
+  "w": 960,
+  "h": 675,
+  "kb": 7
+ }
+}
