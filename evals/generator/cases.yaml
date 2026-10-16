@@ -1,0 +1,472 @@
+# Dataset de regresión del GENERADOR de preguntas. 30 casos FICTICIOS: personas, empresas y
+# CVs inventados para el test; ningún dato personal real.
+#
+# Cada caso:
+#   must:       competencias que el banco TIENE que evaluar. Cubierta si alguna pregunta (texto en inglés +
+#               competencia) contiene alguna de las palabras de `any` (minúsculas).
+#   forbidden:  premisas que NINGUNA pregunta puede tener (regex sobre el texto en inglés): tecnologías o
+#               experiencias que el CV no respalda.
+#   checks:     expectativas extra: logistics_last (la logística va al final del screening), neutral_gap
+#               (la brecha de años se pregunta sin tono acusatorio), ambiguity (el aviso es contradictorio).
+#   tags:       para filtrar (--tag) y agrupar resultados.
+
+- id: c01_backend_py_junior_partial
+  tags: [backend, junior, partial_evidence, missing_tech]
+  job: |
+    # Backend Engineer (Python) — Northwind Labs
+    Remote LATAM contractor role. You will build and maintain Python services for US clients.
+    Must have: 2+ years of professional Python; REST APIs with FastAPI; asynchronous programming with asyncio;
+    SQL and PostgreSQL; pytest; Git. Nice to have: Docker, AWS.
+    Interview process: 20-minute recruiter screen, then a technical interview.
+  cv: |
+    # Lucía Ferro — Backend Developer
+    Freelance backend developer (Feb 2026 – present): FastAPI services and PostgreSQL for two small clients.
+    Project "QueueLab": a task queue in Python; found and fixed a race condition using threading locks; 60 pytest tests.
+    QA analyst at RetailCo (2023–2025): manual testing and release coordination.
+    Skills: Python, FastAPI, PostgreSQL, pytest, Git, Docker.
+  must:
+    - {name: async, any: [asyncio, async, concurren]}
+    - {name: sql, any: [sql, postgres, query, index]}
+    - {name: testing, any: [test, pytest]}
+    - {name: git, any: [git, branch, pull request, commit]}
+    - {name: api, any: [api, endpoint, fastapi]}
+  forbidden: ["asyncio[^.?]*queuelab", "queuelab[^.?]*asyncio", "your aws"]
+  checks: [logistics_last, neutral_gap]
+
+- id: c02_backend_go_mid_strong
+  tags: [backend, mid, strong_evidence]
+  job: |
+    # Senior-ish Backend Engineer (Go) — Ferrovia Payments
+    Build payment microservices in Go. Required: 3+ years Go, Kafka, PostgreSQL, observability (metrics, tracing),
+    on-call participation. Nice: Kubernetes.
+  cv: |
+    # Tomás Ibarra
+    Backend Engineer at Paylink (2021–2026): Go microservices for card authorizations, Kafka consumers with
+    idempotent processing, PostgreSQL, OpenTelemetry tracing; reduced p99 latency from 480 ms to 190 ms.
+    Participated in on-call rotation (12 incidents as primary).
+  must:
+    - {name: concurrency_go, any: [goroutine, concurren, go ]}
+    - {name: kafka, any: [kafka, consumer, message, event]}
+    - {name: observability, any: [trac, metric, observab, latency]}
+    - {name: incident, any: [incident, on-call, outage]}
+  forbidden: ["your kubernetes"]
+  checks: [logistics_last]
+
+- id: c03_backend_node_junior_gap
+  tags: [backend, junior, no_evidence]
+  job: |
+    # Junior Backend Developer (Node.js) — Mercado Verde
+    Required: Node.js and TypeScript, REST APIs, SQL databases, automated tests. Spanish and basic English.
+  cv: |
+    # Ariel Méndez — Bootcamp graduate
+    Full-stack bootcamp (2025, 600 hours). Projects: "RecetApp" (React frontend, Firebase), "Clima" (React).
+    Previous job: customer support at a telecom (2020–2024).
+  must:
+    - {name: api, any: [api, endpoint, rest]}
+    - {name: sql, any: [sql, database, query]}
+    - {name: testing, any: [test]}
+  forbidden: ["your node(\\.js)? (project|experience|api)", "in recetapp[^.?]*(sql|node)"]
+  checks: [logistics_last]
+
+- id: c04_frontend_react_mid
+  tags: [frontend, mid, strong_evidence]
+  job: |
+    # Frontend Engineer (React) — Atlas Learning
+    Required: 3+ years React and TypeScript, accessibility (WCAG), web performance, component testing,
+    state management. Collaborate with designers.
+  cv: |
+    # Valentina Ruiz
+    Frontend Developer at EduTech SA (2022–2026): React + TypeScript LMS; led WCAG 2.1 AA audit fixing 140 issues;
+    cut LCP from 4.1 s to 2.3 s with code splitting; React Testing Library suite.
+  must:
+    - {name: a11y, any: [accessib, wcag, screen reader, keyboard]}
+    - {name: performance, any: [performance, lcp, slow, render]}
+    - {name: testing, any: [test]}
+    - {name: state, any: [state]}
+  forbidden: []
+  checks: [logistics_last]
+
+- id: c05_frontend_angular_without_angular
+  tags: [frontend, junior, missing_tech]
+  job: |
+    # Junior Frontend Developer (Angular) — Bancor Digital
+    Required: Angular, TypeScript, RxJS, unit tests. Banking domain.
+  cv: |
+    # Julián Prieto
+    Frontend projects with Vue 3 and TypeScript (personal portfolio, a budgeting app). University: Systems Engineering (4th year).
+  must:
+    - {name: angular_or_framework, any: [angular, framework, component]}
+    - {name: rxjs_async, any: [rxjs, observable, async, stream]}
+    - {name: testing, any: [test]}
+  forbidden: ["your angular (project|app|experience)", "in your angular"]
+  checks: []
+
+- id: c06_data_engineer_course_only_spark
+  tags: [data, mid, partial_evidence, missing_tech]
+  job: |
+    # Data Engineer — LogiTrack
+    Required: Airflow orchestration, Spark, dbt, SQL data modeling, data quality checks. Nice: GCP.
+  cv: |
+    # Martina Sosa
+    Data Analyst at Ruta SA (2023–2026): SQL reporting, pandas scripts to clean shipment data, Looker dashboards.
+    Course: "Spark Fundamentals" (online, 2025). Personal project: Airflow DAG that loads weather data daily.
+  must:
+    - {name: orchestration, any: [airflow, orchestrat, dag, schedul]}
+    - {name: modeling, any: [model, schema, dbt]}
+    - {name: quality, any: [quality, validat, check]}
+  forbidden: ["your (production )?spark (job|pipeline|cluster)", "spark in production at ruta"]
+  checks: []
+
+- id: c07_data_scientist_junior_academic
+  tags: [data, junior, academic]
+  job: |
+    # Junior Data Scientist — Mirador Seguros
+    Required: Python, statistical modeling, A/B testing, communicating results to business stakeholders.
+  cv: |
+    # Sofía Alvarado
+    MSc thesis: churn prediction with gradient boosting (AUC 0.81 on a public dataset). Kaggle: top 15% in one competition.
+    Teaching assistant in Statistics (2024–2025).
+  must:
+    - {name: experiment, any: [a/b, experiment, test]}
+    - {name: evaluation, any: [evaluat, metric, auc]}
+    - {name: communication, any: [stakeholder, explain, communicat]}
+  forbidden: ["at mirador", "in your previous job as a data scientist"]
+  checks: []
+
+- id: c08_ai_engineer_rag
+  tags: [ai, mid, strong_evidence]
+  job: |
+    # AI Engineer (LLM/RAG) — Quill Legal
+    Build retrieval-augmented assistants over legal documents. Required: RAG pipelines, retrieval evaluation,
+    latency and cost control, access control on documents, Python.
+  cv: |
+    # Bruno Castaño
+    ML Engineer at DocuBot (2025–2026): RAG chatbot over 40k PDFs with pgvector and reranking; built an eval set of
+    300 questions; cut cost per answer by caching embeddings.
+  must:
+    - {name: retrieval_eval, any: [evaluat, retrieval, recall]}
+    - {name: latency_cost, any: [latency, cost]}
+    - {name: permissions, any: [permission, access, allowed, authoriz]}
+  forbidden: []
+  checks: []
+
+- id: c09_mlops_devops_no_ml
+  tags: [ai, mid, partial_evidence]
+  job: |
+    # MLOps Engineer — Nimbus Health
+    Required: Kubernetes, model serving, model monitoring (drift), CI/CD for ML.
+  cv: |
+    # Iván Torres
+    DevOps Engineer (2022–2026): Kubernetes clusters, Helm, GitHub Actions pipelines, Prometheus alerts. No ML experience.
+  must:
+    - {name: serving, any: [serv, deploy, inference]}
+    - {name: monitoring, any: [monitor, drift, alert]}
+    - {name: cicd, any: [ci/cd, pipeline, ci ]}
+  forbidden: ["your (ml|machine learning) model", "models you trained"]
+  checks: []
+
+- id: c10_sre_terraform
+  tags: [devops, mid, partial_evidence]
+  job: |
+    # Site Reliability Engineer — Vía Cloud
+    Required: incident response, Terraform on AWS, observability, SLOs.
+  cv: |
+    # Carla Benítez
+    Linux sysadmin (2021–2026) at a hosting company; wrote Terraform modules for 3 internal services; Grafana dashboards.
+  must:
+    - {name: incident, any: [incident, outage, on-call]}
+    - {name: iac, any: [terraform, infrastructure]}
+    - {name: slo, any: [slo, reliab, objective]}
+  forbidden: ["your aws (account|migration|lambda)"]
+  checks: []
+
+- id: c11_ios_junior_personal_app
+  tags: [mobile, junior, project]
+  job: |
+    # Junior iOS Developer — Pulso App
+    Required: Swift, SwiftUI, consuming REST APIs, unit testing.
+  cv: |
+    # Nicolás Vera
+    Personal app "Hábitos" published on the App Store (SwiftUI, 1.2k downloads). University courses in Java.
+  must:
+    - {name: swiftui, any: [swiftui, swift, view]}
+    - {name: api, any: [api, network, request]}
+    - {name: testing, any: [test]}
+  forbidden: ["at your (company|previous job) building ios"]
+  checks: []
+
+- id: c12_qa_manual_to_automation
+  tags: [qa, junior, partial_evidence]
+  job: |
+    # QA Automation Engineer — Tienda Plus
+    Required: test automation with Playwright or Cypress, CI integration, clear bug reports.
+  cv: |
+    # Paula Quiroga
+    Manual QA at ShopNow (2023–2026): 400+ test cases, bug reports in Jira. Course: Cypress basics (2025).
+  must:
+    - {name: automation, any: [automat, playwright, cypress]}
+    - {name: ci, any: [ci, pipeline]}
+    - {name: bug_report, any: [bug, report]}
+  forbidden: ["your (playwright|cypress) (framework|suite) at shopnow"]
+  checks: []
+
+- id: c13_fullstack_contradictory
+  tags: [fullstack, junior, contradictory]
+  job: |
+    # Junior Full-stack Developer — Zeta Apps
+    Junior position. Requirements: 5+ years of experience with React and Node.js, leading a team of developers.
+  cv: |
+    # Emilia Paz
+    Full-stack developer (2024–2026) at an agency: React and Node.js for 6 client websites.
+  must:
+    - {name: api, any: [api, node, backend]}
+    - {name: frontend, any: [react, frontend, component]}
+  forbidden: ["you led a team", "as a team lead"]
+  checks: [ambiguity]
+
+- id: c14_java_senior_mentoring
+  tags: [backend, senior, strong_evidence]
+  job: |
+    # Senior Java Engineer — Andes Logistics
+    Required: Java and Spring Boot, distributed system design, mentoring juniors, performance tuning.
+  cv: |
+    # Ricardo Lagos
+    Senior Engineer at CargoNet (2017–2026): Spring Boot services, migrated a monolith to 12 services; mentored 4 juniors;
+    JVM tuning that reduced GC pauses by 60%.
+  must:
+    - {name: design, any: [design, architect, distributed]}
+    - {name: mentoring, any: [mentor, junior, coach]}
+    - {name: performance, any: [performance, latency, tuning]}
+  forbidden: []
+  checks: []
+
+- id: c15_incomplete_posting
+  tags: [backend, junior, incomplete]
+  job: |
+    # Software Developer
+    Python. Remote.
+  cv: |
+    # Diego Ramos
+    Python scripts to automate reports at an accounting firm (2024–2026). Personal Flask API project.
+  must:
+    - {name: python, any: [python, script, api]}
+  forbidden: []
+  checks: [ambiguity]
+
+- id: c16_consultancy_client_facing
+  tags: [backend, mid, client]
+  job: |
+    # Software Engineer — Bridge Consulting (US clients)
+    Work embedded with US clients. Required: fluent English, client communication, estimating tasks, Python or Node.
+  cv: |
+    # Agustina Cruz
+    Freelance developer for LATAM clients (2022–2026): Node.js APIs; weekly status reports to clients. English B2.
+  must:
+    - {name: client, any: [client, stakeholder]}
+    - {name: estimation, any: [estimat, deadline, longer than expected, scope]}
+  forbidden: ["your us client"]
+  checks: [logistics_last]
+
+- id: c17_rust_hobby_only
+  tags: [backend, mid, project, missing_tech]
+  job: |
+    # Systems Engineer (Rust) — Kelp Storage
+    Required: production Rust, ownership and borrowing, performance profiling, concurrency.
+  cv: |
+    # Hernán Gil
+    C++ developer (2021–2026) at a trading firm: low-latency order router. Rust: personal CLI tool (hobby).
+  must:
+    - {name: ownership, any: [ownership, borrow, memory]}
+    - {name: performance, any: [profil, performance, latency]}
+    - {name: concurrency, any: [concurren, thread, async]}
+  forbidden: ["your production rust", "rust (service|system) at your"]
+  checks: []
+
+- id: c18_data_analyst_career_start
+  tags: [data, junior, no_evidence]
+  job: |
+    # Junior Data Analyst — Café Origen
+    Required: SQL, dashboards, presenting insights to non-technical managers.
+  cv: |
+    # Rocío Funes
+    Business administration graduate (2025). Excel reports for a family store. Online SQL course (2025).
+  must:
+    - {name: sql, any: [sql, query]}
+    - {name: communication, any: [present, explain, manager, stakeholder]}
+  forbidden: ["your (sql|dashboard) work at"]
+  checks: []
+
+- id: c19_support_engineer
+  tags: [support, junior, partial_evidence]
+  job: |
+    # Product Support Engineer — Ventana SaaS
+    Required: debugging customer issues across logs and APIs, clear written communication, SQL basics.
+  cv: |
+    # Mateo Lucero
+    IT helpdesk (2022–2026): resolved 2,000+ tickets; wrote a knowledge base; basic SQL queries for reports.
+  must:
+    - {name: debugging, any: [debug, investigat, log, troubleshoot]}
+    - {name: writing, any: [written, write, communicat, customer]}
+  forbidden: []
+  checks: []
+
+- id: c20_appsec_ctf
+  tags: [security, junior, hackathon]
+  job: |
+    # Junior Application Security Engineer — Faro Bank
+    Required: threat modeling, secure code review, OWASP Top 10, working with developers.
+  cv: |
+    # Lara Ocampo
+    CTF competitions (2023–2026, top 10 in two national events). IT support at a school (2022–2025).
+  must:
+    - {name: threat_modeling, any: [threat, risk, attack]}
+    - {name: code_review, any: [review, vulnerab, owasp, code]}
+  forbidden: ["at faro", "your security team"]
+  checks: []
+
+- id: c21_embedded_student
+  tags: [embedded, junior, academic]
+  job: |
+    # Junior Firmware Engineer — Volta Devices
+    Required: C, microcontrollers, RTOS concepts, debugging hardware/software issues.
+  cv: |
+    # Franco Medina
+    Electronics Engineering student (5th year). Projects: Arduino weather station, STM32 motor controller (university lab).
+  must:
+    - {name: c_mcu, any: [ c , microcontroller, firmware, stm32, embedded]}
+    - {name: rtos, any: [rtos, task, interrupt, concurren]}
+    - {name: debugging, any: [debug]}
+  forbidden: ["your (production|commercial) firmware"]
+  checks: []
+
+- id: c22_unity_gamejams
+  tags: [gamedev, junior, hackathon]
+  job: |
+    # Junior Gameplay Programmer (Unity) — Pampa Games
+    Required: C#, Unity, performance on mobile, gameplay systems.
+  cv: |
+    # Ludmila Arce
+    Five game jams (Unity, C#), one winner of "Best gameplay" at a regional jam. Freelance 3D modeling.
+  must:
+    - {name: performance, any: [performance, frame, fps, optimi]}
+    - {name: gameplay, any: [gameplay, system, mechanic]}
+  forbidden: ["your (published|commercial) game"]
+  checks: []
+
+- id: c23_django_intern_flask
+  tags: [backend, intern, missing_tech]
+  job: |
+    # Backend Intern (Django) — Escuela Online
+    Internship. Required: Python, Django basics, Git, willingness to learn testing.
+  cv: |
+    # Benjamín Soler
+    University projects: a Flask REST API for a library (team of 3), Git with GitHub. 3rd year Computer Science.
+  must:
+    - {name: framework, any: [django, framework, flask, web]}
+    - {name: git, any: [git, branch, merge]}
+    - {name: testing, any: [test]}
+  forbidden: ["your django (project|app|api)", "in django you built"]
+  checks: []
+
+- id: c24_event_driven_rabbitmq
+  tags: [backend, mid, partial_evidence]
+  job: |
+    # Platform Engineer (event-driven) — Correo Rápido
+    Required: Kafka, delivery semantics (at-least-once, exactly-once), idempotent consumers, schema evolution.
+  cv: |
+    # Gonzalo Peralta
+    Backend developer (2022–2026): RabbitMQ consumers for order events, retry queues, PostgreSQL.
+  must:
+    - {name: delivery, any: [at-least-once, exactly-once, deliver, duplicate]}
+    - {name: idempotency, any: [idempot, duplicate, twice]}
+    - {name: schema, any: [schema, version, evolution]}
+  forbidden: ["your kafka (cluster|consumer|topic)"]
+  checks: []
+
+- id: c25_analytics_engineer_bi
+  tags: [data, mid, partial_evidence]
+  job: |
+    # Analytics Engineer — Grano Analytics
+    Required: dbt, Snowflake, dimensional modeling, data tests, version control.
+  cv: |
+    # Camila Ortega
+    BI Developer (2021–2026): SQL Server data marts, SSIS packages, Power BI. Git for SQL scripts since 2024.
+  must:
+    - {name: modeling, any: [model, dimension, star schema, fact]}
+    - {name: data_tests, any: [test, quality]}
+    - {name: version_control, any: [git, version, review]}
+  forbidden: ["your dbt (project|models)", "your snowflake"]
+  checks: []
+
+- id: c26_research_engineer_thesis
+  tags: [ai, junior, academic]
+  job: |
+    # ML Research Engineer — Cóndor AI
+    Required: PyTorch, training and evaluating transformer models, experiment tracking, reading papers.
+  cv: |
+    # Ezequiel Barros
+    MSc thesis: fine-tuned a small transformer for Spanish NER (F1 0.88 on a public dataset). PyTorch, Weights & Biases.
+  must:
+    - {name: training, any: [train, fine-tun]}
+    - {name: evaluation, any: [evaluat, metric, f1]}
+    - {name: tracking, any: [track, experiment]}
+  forbidden: ["in production at"]
+  checks: []
+
+- id: c27_dotnet_years_gap
+  tags: [backend, mid, partial_evidence]
+  job: |
+    # .NET Developer — Sur Seguros
+    Required: 3+ years of professional C# / .NET, Web APIs, SQL Server, unit testing.
+  cv: |
+    # Florencia Díaz
+    .NET developer at InsurTech AR (Mar 2025 – present). QA tester (2022–2025). Personal project: ASP.NET Core API.
+  must:
+    - {name: api, any: [api, endpoint]}
+    - {name: sql, any: [sql, database, query]}
+    - {name: testing, any: [test]}
+    - {name: experience_years, any: [experience, years]}
+  forbidden: ["3\\+? years (of|as a) (\\.net|c#) developer, you"]
+  checks: [neutral_gap, logistics_last]
+
+- id: c28_contractor_logistics
+  tags: [backend, mid, client, logistics]
+  job: |
+    # Contract Backend Developer — Harbor Studio (US)
+    6-month contract, hourly rate, 4 hours overlap with US Eastern time. Python or Node.
+  cv: |
+    # Sebastián Molina
+    Freelance backend developer (2021–2026), Node.js and Python for small agencies.
+  must:
+    - {name: logistics, any: [availab, start, rate, overlap, time zone, contract]}
+  forbidden: ["your rate is", "you expect \\$"]
+  checks: [logistics_last]
+
+- id: c29_career_changer_teacher
+  tags: [frontend, junior, no_evidence, career_change]
+  job: |
+    # Junior Web Developer — Aula Viva
+    Required: HTML, CSS, JavaScript, React basics. Edtech company.
+  cv: |
+    # Mariana Ríos
+    Primary school teacher (2015–2025). Web development bootcamp (2025): React portfolio project "Clase Virtual".
+  must:
+    - {name: motivation, any: [why, interest, motivat, switch, change]}
+    - {name: frontend, any: [react, javascript, component, css]}
+  forbidden: ["your (professional|previous) (developer|engineering) (role|job|experience)"]
+  checks: []
+
+- id: c30_engineering_manager
+  tags: [management, senior, partial_evidence]
+  job: |
+    # Engineering Manager — Brisa Mobility
+    Required: people management (1:1s, performance), delivery planning, stakeholder management, technical background.
+  cv: |
+    # Pablo Ferreyra
+    Tech Lead (2024–2026) of 4 engineers at a fintech; before: backend engineer (2018–2024). No formal people management.
+  must:
+    - {name: people, any: [people, report, 1:1, feedback, perform]}
+    - {name: delivery, any: [deliver, plan, roadmap, deadline]}
+    - {name: stakeholders, any: [stakeholder, product, business]}
+  forbidden: ["as a manager of", "your direct reports at"]
+  checks: []
