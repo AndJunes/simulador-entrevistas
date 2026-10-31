@@ -1,5 +1,8 @@
 # Interview Simulator
 
+[![CI](https://github.com/AndJunes/simulador-entrevistas/actions/workflows/ci.yml/badge.svg)](https://github.com/AndJunes/simulador-entrevistas/actions/workflows/ci.yml)
+![Coverage](https://img.shields.io/badge/backend_coverage-58%25-yellow)
+
 *Read this in [Spanish / Español](README.es.md).*
 
 A personal, local-first AI interview simulator. You upload **a real job posting and your
