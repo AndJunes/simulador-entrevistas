@@ -6,23 +6,92 @@ The deterministic ones catch typical errors of an LLM-generated bank:
 - leading questions ("such as…", "would you use X, Y, Z?");
 - duplicates and out-of-range durations.
 """
+
 import re
 
-TECH_TERMS = ["asyncio", "async", "await", "threads", "threading", "multiprocessing", "celery", "fastapi", "django", "flask",
-              "sqlalchemy", "alembic", "postgresql", "postgres", "mysql", "mongodb", "redis", "kafka", "rabbitmq", "sqs",
-              "pub/sub", "pubsub", "graphql", "grpc", "docker", "kubernetes", "terraform", "aws", "gcp", "azure",
-              "cloud run", "lambda", "react", "angular", "vue", "next.js", "typescript", "javascript", "node.js", "rust",
-              "golang", "java", "kotlin", "swift", "pytest", "jest", "rag", "embeddings", "pgvector", "reranking", "langchain",
-              "langgraph", "llm", "spark", "airflow", "dbt", "pandas", "pytorch", "tensorflow", "ci/cd", "github actions"]
-EQUIV = {"async": {"asyncio", "async", "await", "async/await"}, "asyncio": {"asyncio", "async", "async/await"},
-         "postgres": {"postgresql", "postgres"}, "postgresql": {"postgresql", "postgres"},
-         "pubsub": {"pub/sub", "pubsub", "google pub/sub"}, "pub/sub": {"pub/sub", "pubsub", "google pub/sub"},
-         "threads": {"threads", "threading", "thread"}, "threading": {"threads", "threading", "thread"}}
-STOP = set("a an the and or of to in on for with your you did do how what why when which would could can is are was "
-           "were be this that it as at by from about me tell walk us we our i my time de la el los las y o en con por "
-           "para que como cuando qué cómo por qué contame un una tu tus vos sobre lo le se del al es fue".split())
-LEADING = re.compile(r"\b(such as|e\.g\.|for example|like using|would you use|did you use|por ejemplo|como por ejemplo|"
-                     r"usarías|usaste)\b", re.I)
+TECH_TERMS = [
+    "asyncio",
+    "async",
+    "await",
+    "threads",
+    "threading",
+    "multiprocessing",
+    "celery",
+    "fastapi",
+    "django",
+    "flask",
+    "sqlalchemy",
+    "alembic",
+    "postgresql",
+    "postgres",
+    "mysql",
+    "mongodb",
+    "redis",
+    "kafka",
+    "rabbitmq",
+    "sqs",
+    "pub/sub",
+    "pubsub",
+    "graphql",
+    "grpc",
+    "docker",
+    "kubernetes",
+    "terraform",
+    "aws",
+    "gcp",
+    "azure",
+    "cloud run",
+    "lambda",
+    "react",
+    "angular",
+    "vue",
+    "next.js",
+    "typescript",
+    "javascript",
+    "node.js",
+    "rust",
+    "golang",
+    "java",
+    "kotlin",
+    "swift",
+    "pytest",
+    "jest",
+    "rag",
+    "embeddings",
+    "pgvector",
+    "reranking",
+    "langchain",
+    "langgraph",
+    "llm",
+    "spark",
+    "airflow",
+    "dbt",
+    "pandas",
+    "pytorch",
+    "tensorflow",
+    "ci/cd",
+    "github actions",
+]
+EQUIV = {
+    "async": {"asyncio", "async", "await", "async/await"},
+    "asyncio": {"asyncio", "async", "async/await"},
+    "postgres": {"postgresql", "postgres"},
+    "postgresql": {"postgresql", "postgres"},
+    "pubsub": {"pub/sub", "pubsub", "google pub/sub"},
+    "pub/sub": {"pub/sub", "pubsub", "google pub/sub"},
+    "threads": {"threads", "threading", "thread"},
+    "threading": {"threads", "threading", "thread"},
+}
+STOP = set(
+    "a an the and or of to in on for with your you did do how what why when which would could can is are was "
+    "were be this that it as at by from about me tell walk us we our i my time de la el los las y o en con por "
+    "para que como cuando qué cómo por qué contame un una tu tus vos sobre lo le se del al es fue".split()
+)
+LEADING = re.compile(
+    r"\b(such as|e\.g\.|for example|like using|would you use|did you use|por ejemplo|como por ejemplo|"
+    r"usarías|usaste)\b",
+    re.I,
+)
 DOUBLE = re.compile(r"\b(and|y)\s+(how|what|why|which|cómo|qué|por qué|cuál)\b", re.I)
 
 
@@ -41,8 +110,16 @@ def techs_in(text: str) -> set[str]:
 
 
 def _ev_terms(e: dict) -> set[str]:
-    blob = " ".join([e.get("title", ""), e.get("org", ""), *e.get("technologies", []), e.get("quote", ""),
-                     *e.get("responsibilities", []), *e.get("achievements", [])]).lower()
+    blob = " ".join(
+        [
+            e.get("title", ""),
+            e.get("org", ""),
+            *e.get("technologies", []),
+            e.get("quote", ""),
+            *e.get("responsibilities", []),
+            *e.get("achievements", []),
+        ]
+    ).lower()
     return {t for t in TECH_TERMS if re.search(rf"(?<![\w]){re.escape(t)}(?![\w])", blob)}
 
 
@@ -67,8 +144,10 @@ def deterministic_issues(q: dict, evidence: list[dict]) -> list[str]:
     fmt = q.get("format", "")
     # Double question = two distinct TASKS (e.g. "build AND evaluate a RAG"). In behavioral and
     # logistics questions, a second question detailing the same story or condition is normal.
-    if fmt not in ("design", "exercise") and (text.count("?") > 2 or (
-            fmt in ("technical_knowledge", "situational", "debugging") and (text.count("?") > 1 or DOUBLE.search(text)))):
+    if fmt not in ("design", "exercise") and (
+        text.count("?") > 2
+        or (fmt in ("technical_knowledge", "situational", "debugging") and (text.count("?") > 1 or DOUBLE.search(text)))
+    ):
         issues.append("pregunta múltiple: pide más de una cosa a la vez")
     if fmt != "logistics" and (LEADING.search(text) or LEADING.search(q.get("text_es", ""))):
         issues.append("inductiva: sugiere la respuesta o el ejemplo a usar")

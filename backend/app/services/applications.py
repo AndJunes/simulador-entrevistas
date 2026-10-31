@@ -2,6 +2,7 @@
 
 Runs in a background thread and emits progress on the `app:<id>` SSE channel.
 """
+
 import logging
 import re
 import traceback
@@ -15,8 +16,20 @@ from app.services import events
 
 log = logging.getLogger("applications")
 
-FIELDS = ("company", "candidate_name", "interview", "requirements", "questions", "glossary", "analysis", "evidence",
-          "evidence_map", "blueprints", "company_facts", "generation_report")
+FIELDS = (
+    "company",
+    "candidate_name",
+    "interview",
+    "requirements",
+    "questions",
+    "glossary",
+    "analysis",
+    "evidence",
+    "evidence_map",
+    "blueprints",
+    "company_facts",
+    "generation_report",
+)
 
 
 def generate(app_id: str) -> None:
@@ -39,8 +52,14 @@ def generate(app_id: str) -> None:
             a.generator_version = pipeline.VERSION
             a.status = "ready"
         rep = out["generation_report"]
-        events.emit(cid, "done", cost_usd=rep["cost_usd"], questions=len(out["questions"]),
-                    requirements=len(out["requirements"]), uncovered=rep["coverage"]["uncovered"])
+        events.emit(
+            cid,
+            "done",
+            cost_usd=rep["cost_usd"],
+            questions=len(out["questions"]),
+            requirements=len(out["requirements"]),
+            uncovered=rep["coverage"]["uncovered"],
+        )
     except Exception as e:  # noqa: BLE001
         log.error("generación %s falló: %s", app_id, traceback.format_exc())
         with db() as s:

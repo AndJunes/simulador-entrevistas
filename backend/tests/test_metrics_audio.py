@@ -1,4 +1,5 @@
 """Deterministic tests: delivery metrics, fillers, VAD and audio deletion."""
+
 import wave
 from pathlib import Path
 
@@ -9,8 +10,10 @@ from app.pipeline import audio, metrics
 
 
 def words(text: str, step: float = 0.3) -> list[dict]:
-    return [{"word": w, "start_s": round(i * step, 2), "end_s": round(i * step + 0.2, 2), "prob": 0.9}
-            for i, w in enumerate(text.split())]
+    return [
+        {"word": w, "start_s": round(i * step, 2), "end_s": round(i * step + 0.2, 2), "prob": 0.9}
+        for i, w in enumerate(text.split())
+    ]
 
 
 VAD_FLAT = {"speech_onset_s": 0.0, "speech_offset_s": 10.0, "pauses": []}
@@ -41,7 +44,7 @@ def test_muy_bueno_is_not_filler():
 
 
 def test_duration_status_and_wpm():
-    ws = words(" ".join(["palabra"] * 100), step=0.4)    # ~40 s
+    ws = words(" ".join(["palabra"] * 100), step=0.4)  # ~40 s
     vad = {"speech_onset_s": 0.0, "speech_offset_s": ws[-1]["end_s"], "pauses": []}
     m = metrics.form_metrics(ws, vad, "es", "star", None)
     assert m["duration_status"] == "corta"
@@ -49,10 +52,15 @@ def test_duration_status_and_wpm():
 
 
 def test_long_pauses_from_vad_not_word_gaps():
-    vad = {"speech_onset_s": 1.0, "speech_offset_s": 30.0,
-           "pauses": [{"start_s": 0.2, "end_s": 0.9, "dur_s": 0.7},          # before speaking: doesn't count
-                      {"start_s": 10.0, "end_s": 13.0, "dur_s": 3.0},        # long
-                      {"start_s": 20.0, "end_s": 20.6, "dur_s": 0.6}]}       # short
+    vad = {
+        "speech_onset_s": 1.0,
+        "speech_offset_s": 30.0,
+        "pauses": [
+            {"start_s": 0.2, "end_s": 0.9, "dur_s": 0.7},  # before speaking: doesn't count
+            {"start_s": 10.0, "end_s": 13.0, "dur_s": 3.0},  # long
+            {"start_s": 20.0, "end_s": 20.6, "dur_s": 0.6},
+        ],
+    }  # short
     m = metrics.form_metrics(words("hola esto es una respuesta"), vad, "es", "star", None)
     assert [p["dur_s"] for p in m["long_pauses"]] == [3.0]
 
@@ -69,7 +77,7 @@ def _write_wav(path: Path, segments: list[tuple[float, float]], sr: int = 16000)
     x = rng.normal(0, 0.002, int(total * sr))
     for s, e in segments:
         t = np.arange(int((e - s) * sr)) / sr
-        x[int(s * sr): int(s * sr) + len(t)] += 0.2 * np.sin(2 * np.pi * 220 * t)
+        x[int(s * sr) : int(s * sr) + len(t)] += 0.2 * np.sin(2 * np.pi * 220 * t)
     with wave.open(str(path), "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)

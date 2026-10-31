@@ -3,6 +3,7 @@
 The pipeline runs in threads (STT/LLM are blocking); the SSE reads the channel and forwards what's new.
 A client that connects late gets the channel's full history (no stage is lost).
 """
+
 import threading
 import time
 from dataclasses import dataclass, field

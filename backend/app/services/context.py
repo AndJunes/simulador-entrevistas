@@ -3,6 +3,7 @@
 API: cv(), job(), questions(), question(), glossary(), candidate_first_name(), interview_info(), per application
 via `for_app(app_id)`. Cached by (id, updated_at): editing the application reloads it automatically.
 """
+
 import re
 import threading
 from dataclasses import dataclass, field
@@ -13,10 +14,47 @@ from app.generation import blueprint as bp
 from app.generation.schema import DEFAULT_DURATION, normalize_question  # noqa: F401  (re-export)
 
 # Common technical terms: if they appear in the CV or the job, they're passed to Whisper as a hint.
-COMMON_TERMS = ["Python", "FastAPI", "PostgreSQL", "SQLAlchemy", "Alembic", "Redis", "Rust", "Go", "Node.js",
-                "NestJS", "TypeScript", "JavaScript", "React", "Angular", "Next.js", "Docker", "Kubernetes", "AWS",
-                "GCP", "Azure", "Cloud Run", "Pub/Sub", "Kafka", "gRPC", "GraphQL", "REST", "JWT", "OAuth", "RBAC",
-                "pytest", "CI/CD", "LLM", "RAG", "Terraform", "MongoDB", "Prisma", "Solidity", "EVM", "Tokio"]
+COMMON_TERMS = [
+    "Python",
+    "FastAPI",
+    "PostgreSQL",
+    "SQLAlchemy",
+    "Alembic",
+    "Redis",
+    "Rust",
+    "Go",
+    "Node.js",
+    "NestJS",
+    "TypeScript",
+    "JavaScript",
+    "React",
+    "Angular",
+    "Next.js",
+    "Docker",
+    "Kubernetes",
+    "AWS",
+    "GCP",
+    "Azure",
+    "Cloud Run",
+    "Pub/Sub",
+    "Kafka",
+    "gRPC",
+    "GraphQL",
+    "REST",
+    "JWT",
+    "OAuth",
+    "RBAC",
+    "pytest",
+    "CI/CD",
+    "LLM",
+    "RAG",
+    "Terraform",
+    "MongoDB",
+    "Prisma",
+    "Solidity",
+    "EVM",
+    "Tokio",
+]
 
 
 @dataclass
@@ -43,15 +81,28 @@ class AppContext:
 
     def job(self) -> str:
         """The job as the evaluator sees it: the posting + the requirements with IDs (R1…)."""
-        reqs = "\n".join(f"| {r['id']} | {r.get('text', '')} | {r.get('priority', '')} | {r.get('coverage', '')} | {r.get('cv_evidence', '')} |"
-                         for r in self.requirements)
+        reqs = "\n".join(
+            f"| {r['id']} | {r.get('text', '')} | {r.get('priority', '')} | {r.get('coverage', '')} | {r.get('cv_evidence', '')} |"
+            for r in self.requirements
+        )
         head = f"# Puesto — {self.title}{f' · {self.company}' if self.company else ''}\n\n"
-        return head + self.job_md + (f"\n\n## Requisitos (IDs para trazabilidad)\n| ID | Requisito | Prioridad | Cobertura en el CV | Evidencia en el CV |\n|---|---|---|---|---|\n{reqs}\n" if reqs else "")
+        return (
+            head
+            + self.job_md
+            + (
+                f"\n\n## Requisitos (IDs para trazabilidad)\n| ID | Requisito | Prioridad | Cobertura en el CV | Evidencia en el CV |\n|---|---|---|---|---|\n{reqs}\n"
+                if reqs
+                else ""
+            )
+        )
 
     def evidence_digest(self) -> str:
         """CV evidence with its kind (professional, project…): the evaluator separates experience from knowledge."""
-        return "\n".join(f"- {e['id']} [{e.get('kind', '')}] {e.get('title', '')} ({e.get('org', '')}, {e.get('dates', '')}): "
-                         f"tecnologías {', '.join(e.get('technologies', []))}" for e in self.evidence)
+        return "\n".join(
+            f"- {e['id']} [{e.get('kind', '')}] {e.get('title', '')} ({e.get('org', '')}, {e.get('dates', '')}): "
+            f"tecnologías {', '.join(e.get('technologies', []))}"
+            for e in self.evidence
+        )
 
     def stage(self, stage: str) -> dict | None:
         return next((b for b in self.blueprints if b.get("stage") == stage), None)
@@ -67,7 +118,9 @@ class AppContext:
 
     def glossary(self) -> list[str]:
         blob = self.cv_md + "\n" + self.job_md
-        terms = [t for t in COMMON_TERMS if re.search(rf"(?<![\w]){re.escape(t)}(?![\w])", blob, re.I)] + list(self.extra_terms)
+        terms = [t for t in COMMON_TERMS if re.search(rf"(?<![\w]){re.escape(t)}(?![\w])", blob, re.I)] + list(
+            self.extra_terms
+        )
         if self.company:
             terms.append(self.company)
         return list(dict.fromkeys(terms))[:60]
@@ -97,12 +150,23 @@ def for_app(app_id: str) -> AppContext:
             hit = _cache.get(app_id)
             if hit and hit[0] == stamp:
                 return hit[1]
-        ctx = AppContext(id=a.id, title=a.title, company=a.company, candidate=a.candidate_name, cv_md=a.cv_md,
-                         job_md=a.job_md, interview=a.interview or {}, requirements=a.requirements or [],
-                         bank=(bank := [normalize_question(q, i) for i, q in enumerate(a.questions or [])]),
-                         extra_terms=a.glossary or [], evidence=a.evidence or [], evidence_map=a.evidence_map or [],
-                         blueprints=bp.sync(a.blueprints or [], bank), analysis=a.analysis or {},
-                         company_facts=a.company_facts or [])
+        ctx = AppContext(
+            id=a.id,
+            title=a.title,
+            company=a.company,
+            candidate=a.candidate_name,
+            cv_md=a.cv_md,
+            job_md=a.job_md,
+            interview=a.interview or {},
+            requirements=a.requirements or [],
+            bank=(bank := [normalize_question(q, i) for i, q in enumerate(a.questions or [])]),
+            extra_terms=a.glossary or [],
+            evidence=a.evidence or [],
+            evidence_map=a.evidence_map or [],
+            blueprints=bp.sync(a.blueprints or [], bank),
+            analysis=a.analysis or {},
+            company_facts=a.company_facts or [],
+        )
     with _lock:
         _cache[app_id] = (stamp, ctx)
     return ctx
@@ -119,15 +183,23 @@ def for_session(session_id: str) -> AppContext:
 
 # ----------------------------------------------------------------------------- legacy-format migration
 
+
 def parse_legacy_job(md: str) -> dict:
     """Reads the legacy Markdown format (question and requirement tables) to migrate it without spending LLM calls."""
     qs = []
     for line in md.splitlines():
         m = re.match(r"^\|\s*(Q\d+)\s*\|(.+?)\|(.+?)\|\s*(screening|star)\s*\|(?:(.+?)\|)?", line)
         if m:
-            qs.append({"id": m.group(1), "text_en": m.group(2).strip(), "guidance": m.group(3).strip(),
-                       "type": m.group(4), "text_es": (m.group(5) or m.group(2)).strip()})
-    for q in qs:   # legacy format: Q1 is the pitch; Q8/Q9 (logistics, other processes) take no follow-up
+            qs.append(
+                {
+                    "id": m.group(1),
+                    "text_en": m.group(2).strip(),
+                    "guidance": m.group(3).strip(),
+                    "type": m.group(4),
+                    "text_es": (m.group(5) or m.group(2)).strip(),
+                }
+            )
+    for q in qs:  # legacy format: Q1 is the pitch; Q8/Q9 (logistics, other processes) take no follow-up
         q["pitch"] = q["id"] == "Q1"
         q["followup"] = q["id"] not in ("Q8", "Q9")
         q["duration"] = [60, 90] if q["pitch"] else DEFAULT_DURATION[q["type"]]
@@ -136,10 +208,21 @@ def parse_legacy_job(md: str) -> dict:
         m = re.match(r"^\|\s*(R\d+)\s*\|(.+?)\|(.+?)\|", line)
         if m:
             reqs.append({"id": m.group(1), "text": m.group(2).strip(), "cv_evidence": m.group(3).strip()})
+
     def line(label):
         m = re.search(rf"\*\*{label}:\*\*\s*(.+)", md)
         return m.group(1).strip() if m else None
+
     title = (re.search(r"^# Puesto — (.+)$", md, re.M) or [None, "Puesto"])[1]
-    return {"title": title, "questions": qs, "requirements": reqs,
-            "interview": {"type": line("Tipo"), "with": line("Con"), "when": line("Cuándo"),
-                          "evaluates": line("Qué evalúa"), "language": line("Idioma probable")}}
+    return {
+        "title": title,
+        "questions": qs,
+        "requirements": reqs,
+        "interview": {
+            "type": line("Tipo"),
+            "with": line("Con"),
+            "when": line("Cuándo"),
+            "evaluates": line("Qué evalúa"),
+            "language": line("Idioma probable"),
+        },
+    }

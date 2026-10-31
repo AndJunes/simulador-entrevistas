@@ -11,6 +11,7 @@
 - Per-question language: in "mix" mode it starts in Spanish and switches to English mid-interview.
 - The interviewer is a generic persona ("Recruiter · <company>"), not a real person.
 """
+
 from operator import add
 from typing import Annotated, TypedDict
 
@@ -24,45 +25,64 @@ from app.pipeline.llm import structured
 from app.services import context
 
 GREETING = {
-    ("recruiter_screen", "es"): "Hola {name}, gracias por tu tiempo. Soy del equipo de recruiting de {company}. Es una charla "
-                                "de unos {minutes} minutos para conocerte un poco. Para arrancar: {q}",
+    (
+        "recruiter_screen",
+        "es",
+    ): "Hola {name}, gracias por tu tiempo. Soy del equipo de recruiting de {company}. Es una charla "
+    "de unos {minutes} minutos para conocerte un poco. Para arrancar: {q}",
     ("recruiter_screen", "en"): "Hi {name}, thanks for joining. I'm with the recruiting team at {company}. This is a "
-                                "{minutes}-minute intro call to get to know you a bit. To start: {q}",
-    ("technical_screen", "es"): "Hola {name}, gracias por sumarte. Soy parte del equipo de ingeniería de {company}. Vamos a "
-                                "tener una entrevista técnica de unos {minutes} minutos, con situaciones de trabajo. "
-                                "Pensá en voz alta, está perfecto. Arranquemos: {q}",
+    "{minutes}-minute intro call to get to know you a bit. To start: {q}",
+    (
+        "technical_screen",
+        "es",
+    ): "Hola {name}, gracias por sumarte. Soy parte del equipo de ingeniería de {company}. Vamos a "
+    "tener una entrevista técnica de unos {minutes} minutos, con situaciones de trabajo. "
+    "Pensá en voz alta, está perfecto. Arranquemos: {q}",
     ("technical_screen", "en"): "Hi {name}, thanks for joining. I'm on the engineering team at {company}. This is a "
-                                "technical interview of about {minutes} minutes, built around work situations. Feel free "
-                                "to think out loud. Let's start: {q}",
-    ("behavioral_client", "es"): "Hola {name}, gracias por tu tiempo. Soy de {company}. Hoy vamos a hablar de experiencias "
-                                 "concretas de trabajo y de cómo colaborás, unos {minutes} minutos. Primera pregunta: {q}",
+    "technical interview of about {minutes} minutes, built around work situations. Feel free "
+    "to think out loud. Let's start: {q}",
+    (
+        "behavioral_client",
+        "es",
+    ): "Hola {name}, gracias por tu tiempo. Soy de {company}. Hoy vamos a hablar de experiencias "
+    "concretas de trabajo y de cómo colaborás, unos {minutes} minutos. Primera pregunta: {q}",
     ("behavioral_client", "en"): "Hi {name}, thanks for your time. I'm with {company}. Today we'll talk about concrete "
-                                 "work experiences and how you collaborate, for about {minutes} minutes. First question: {q}",
+    "work experiences and how you collaborate, for about {minutes} minutes. First question: {q}",
 }
 T = {
-    "es": {"transitions": ["Genial, gracias.", "Perfecto, gracias.", "Bien, entendido.", "Gracias por contarlo.", "Muy bien."],
-           "closing": "Esas eran todas mis preguntas. ¿Tenés alguna pregunta para mí?",
-           "wrap": "Muchas gracias, {name}. Te vamos a escribir con los próximos pasos. ¡Que tengas un buen día!"},
-    "en": {"transitions": ["Great, thanks.", "Got it, thank you.", "Okay, perfect.", "Thanks for sharing that.", "Nice."],
-           "closing": "Those were all my questions. Do you have any questions for me?",
-           "wrap": "Thanks a lot, {name}. We'll be in touch about next steps. Have a great day!"},
+    "es": {
+        "transitions": [
+            "Genial, gracias.",
+            "Perfecto, gracias.",
+            "Bien, entendido.",
+            "Gracias por contarlo.",
+            "Muy bien.",
+        ],
+        "closing": "Esas eran todas mis preguntas. ¿Tenés alguna pregunta para mí?",
+        "wrap": "Muchas gracias, {name}. Te vamos a escribir con los próximos pasos. ¡Que tengas un buen día!",
+    },
+    "en": {
+        "transitions": ["Great, thanks.", "Got it, thank you.", "Okay, perfect.", "Thanks for sharing that.", "Nice."],
+        "closing": "Those were all my questions. Do you have any questions for me?",
+        "wrap": "Thanks a lot, {name}. We'll be in touch about next steps. Have a great day!",
+    },
 }
 SWITCH_EN = "Let's switch to English for the next part, since it's part of the day-to-day work."
 
 
 class InterviewState(TypedDict, total=False):
     session_id: str
-    application_id: str                 # the application the CV, job and questions come from
-    lang: str                           # es | en | mix
+    application_id: str  # the application the CV, job and questions come from
+    lang: str  # es | en | mix
     stage: str
     minutes: int
-    plan: list[dict]                    # [{qid, lang}]
+    plan: list[dict]  # [{qid, lang}]
     idx: int
-    threads: dict                       # qid → {answers, covered, missing, followups, decisions, closed}
-    pending: dict                       # question currently being answered
-    say: str                            # the interviewer's next line
-    log: Annotated[list[dict], add]     # conversation transcript
-    closed: list[str]                   # threads closed in the last step (to evaluate in the background)
+    threads: dict  # qid → {answers, covered, missing, followups, decisions, closed}
+    pending: dict  # question currently being answered
+    say: str  # the interviewer's next line
+    log: Annotated[list[dict], add]  # conversation transcript
+    closed: list[str]  # threads closed in the last step (to evaluate in the background)
     finished: bool
 
 
@@ -93,9 +113,14 @@ def ask_text(state: InterviewState, idx: int) -> str:
     lang = item_lang(state, idx)
     q = context.in_lang(ctx.question(state["plan"][idx]["qid"]), lang)
     if idx == 0:
-        return greeting(state.get("stage", "recruiter_screen"), lang, name=ctx.candidate_first_name(),
-                        company=ctx.company or ("la empresa" if lang == "es" else "the company"),
-                        minutes=state.get("minutes", 15), q=q["text"])
+        return greeting(
+            state.get("stage", "recruiter_screen"),
+            lang,
+            name=ctx.candidate_first_name(),
+            company=ctx.company or ("la empresa" if lang == "es" else "the company"),
+            minutes=state.get("minutes", 15),
+            q=q["text"],
+        )
     tr = T[lang]["transitions"][idx % len(T[lang]["transitions"])]
     switched = lang == "en" and item_lang(state, idx - 1) == "es"
     return f"{tr} {SWITCH_EN + ' ' if switched else ''}{q['text']}"
@@ -107,12 +132,25 @@ def ask(state: InterviewState) -> dict:
     q = context.in_lang(_ctx(state).question(state["plan"][idx]["qid"]), lang)
     say = ask_text(state, idx)
     pol = q.get("followup_policy") or {}
-    pending = {"qid": q["id"], "text": q["text"], "type": q["type"], "is_followup": False, "parent": q["id"],
-               "lang": lang, "followup_n": 0, "followup_max": pol.get("max_followups", 0)}
+    pending = {
+        "qid": q["id"],
+        "text": q["text"],
+        "type": q["type"],
+        "is_followup": False,
+        "parent": q["id"],
+        "lang": lang,
+        "followup_n": 0,
+        "followup_max": pol.get("max_followups", 0),
+    }
     threads = dict(state.get("threads") or {})
     threads[q["id"]] = {"answers": [], "covered": [], "missing": [], "followups": 0, "decisions": [], "closed": False}
-    return {"say": say, "pending": pending, "threads": threads, "closed": [],
-            "log": [{"role": "interviewer", "text": say, "qid": q["id"], "lang": lang}]}
+    return {
+        "say": say,
+        "pending": pending,
+        "threads": threads,
+        "closed": [],
+        "log": [{"role": "interviewer", "text": say, "qid": q["id"], "lang": lang}],
+    }
 
 
 def listen(state: InterviewState) -> dict:
@@ -121,12 +159,27 @@ def listen(state: InterviewState) -> dict:
     threads = dict(state.get("threads") or {})
     if p["type"] != "closing":
         th = dict(threads[p["parent"]])
-        th["answers"] = th["answers"] + [{"question": p["text"], "text": answer.get("text", ""),
-                                          "turn_id": answer.get("turn_id"), "is_followup": p["is_followup"]}]
+        th["answers"] = th["answers"] + [
+            {
+                "question": p["text"],
+                "text": answer.get("text", ""),
+                "turn_id": answer.get("turn_id"),
+                "is_followup": p["is_followup"],
+            }
+        ]
         threads[p["parent"]] = th
-    return {"threads": threads,
-            "log": [{"role": "candidate", "text": answer.get("text", ""), "qid": p["qid"],
-                     "turn_id": answer.get("turn_id"), "is_followup": p["is_followup"]}]}
+    return {
+        "threads": threads,
+        "log": [
+            {
+                "role": "candidate",
+                "text": answer.get("text", ""),
+                "qid": p["qid"],
+                "turn_id": answer.get("turn_id"),
+                "is_followup": p["is_followup"],
+            }
+        ],
+    }
 
 
 def _next_question(state: InterviewState, threads: dict, closing_parent: str) -> dict:
@@ -136,10 +189,23 @@ def _next_question(state: InterviewState, threads: dict, closing_parent: str) ->
         return {"idx": nxt, "threads": threads, "closed": [closing_parent]}
     lang = item_lang(state, nxt)
     say = T[lang]["closing"]
-    return {"idx": nxt, "threads": threads, "closed": [closing_parent], "say": say,
-            "pending": {"qid": "QC", "text": say, "type": "closing", "is_followup": False, "parent": "QC", "lang": lang,
-                        "followup_n": 0, "followup_max": 0},
-            "log": [{"role": "interviewer", "text": say, "qid": "QC", "lang": lang}]}
+    return {
+        "idx": nxt,
+        "threads": threads,
+        "closed": [closing_parent],
+        "say": say,
+        "pending": {
+            "qid": "QC",
+            "text": say,
+            "type": "closing",
+            "is_followup": False,
+            "parent": "QC",
+            "lang": lang,
+            "followup_n": 0,
+            "followup_max": 0,
+        },
+        "log": [{"role": "interviewer", "text": say, "qid": "QC", "lang": lang}],
+    }
 
 
 def decide(state: InterviewState) -> dict:
@@ -157,20 +223,37 @@ def decide(state: InterviewState) -> dict:
         if d:
             th["covered"] = list(dict.fromkeys(th["covered"] + d.covered_evidence))
             th["missing"] = d.missing_evidence
-            th["decisions"] = th["decisions"] + [{"after": len(th["answers"]), "ask": bool(d.ask_followup),
-                                                  "reason": d.reason, "skip_reason": d.skip_reason,
-                                                  "question": d.followup_question.strip() if d.ask_followup else "",
-                                                  "missing": d.missing_evidence}]
+            th["decisions"] = th["decisions"] + [
+                {
+                    "after": len(th["answers"]),
+                    "ask": bool(d.ask_followup),
+                    "reason": d.reason,
+                    "skip_reason": d.skip_reason,
+                    "question": d.followup_question.strip() if d.ask_followup else "",
+                    "missing": d.missing_evidence,
+                }
+            ]
             threads[p["parent"]] = th
             if d.ask_followup and d.followup_question.strip():
                 n = th["followups"] + 1
                 th["followups"] = n
                 say = d.followup_question.strip()
-                return {"threads": threads, "say": say, "closed": [],
-                        "pending": {"qid": f"{p['parent']}-F{n}", "text": say, "type": p["type"], "is_followup": True,
-                                    "parent": p["parent"], "lang": p.get("lang", "es"), "followup_n": n,
-                                    "followup_max": max_f},
-                        "log": [{"role": "interviewer", "text": say, "qid": f"{p['parent']}-F{n}", "lang": p.get("lang")}]}
+                return {
+                    "threads": threads,
+                    "say": say,
+                    "closed": [],
+                    "pending": {
+                        "qid": f"{p['parent']}-F{n}",
+                        "text": say,
+                        "type": p["type"],
+                        "is_followup": True,
+                        "parent": p["parent"],
+                        "lang": p.get("lang", "es"),
+                        "followup_n": n,
+                        "followup_max": max_f,
+                    },
+                    "log": [{"role": "interviewer", "text": say, "qid": f"{p['parent']}-F{n}", "lang": p.get("lang")}],
+                }
     threads[p["parent"]] = th
     return _next_question(state, threads, p["parent"])
 
@@ -196,16 +279,28 @@ def decide_followup(q: dict, thread: dict, lang: str) -> FollowupDecision | None
     lang_name = "Spanish (rioplatense, voseo)" if lang == "es" else "English"
     pol = q.get("followup_policy") or {}
     convo = "\n".join(f"Q: {a['question']}\nA: {a['text']}" for a in thread["answers"])
-    user = (f"<question>{q.get('text_en')}</question>\n<objective>{q.get('objective', '')}</objective>\n"
-            f"<expected_evidence>{q.get('expected_evidence', [])}</expected_evidence>\n"
-            f"<triggers>{pol.get('triggers', [])}</triggers>\n<already_covered>{thread.get('covered', [])}</already_covered>\n"
-            f"<followups_asked>{thread['followups']} of max {pol.get('max_followups', 0)}</followups_asked>\n"
-            f"<thread>\n{convo}\n</thread>")
+    user = (
+        f"<question>{q.get('text_en')}</question>\n<objective>{q.get('objective', '')}</objective>\n"
+        f"<expected_evidence>{q.get('expected_evidence', [])}</expected_evidence>\n"
+        f"<triggers>{pol.get('triggers', [])}</triggers>\n<already_covered>{thread.get('covered', [])}</already_covered>\n"
+        f"<followups_asked>{thread['followups']} of max {pol.get('max_followups', 0)}</followups_asked>\n"
+        f"<thread>\n{convo}\n</thread>"
+    )
     try:
-        d, _ = structured(env("LLM_FAST_MODEL"),
-                          [{"role": "system", "content": FOLLOWUP_SYSTEM.format(stage=q.get("stage", "screening").replace("_", " "),
-                                                                                lang_name=lang_name)},
-                           {"role": "user", "content": user}], FollowupDecision, "low")
+        d, _ = structured(
+            env("LLM_FAST_MODEL"),
+            [
+                {
+                    "role": "system",
+                    "content": FOLLOWUP_SYSTEM.format(
+                        stage=q.get("stage", "screening").replace("_", " "), lang_name=lang_name
+                    ),
+                },
+                {"role": "user", "content": user},
+            ],
+            FollowupDecision,
+            "low",
+        )
         return d
     except Exception:  # noqa: BLE001  (on failure, move on to the next question)
         return None

@@ -3,6 +3,7 @@
 received → transcribing → transcribed(transcript+metrics) → evaluating → evaluated → tts_ready → done
                                    └→ coaching (blank mode) → tts_ready → done
 """
+
 import logging
 import time
 import traceback
@@ -25,7 +26,9 @@ def _check(cid: str):
         raise Cancelled()
 
 
-def analyze_audio(turn_id: str, raw_path: str, lang: str, qtype: str, question: dict | None, glossary: list[str]) -> dict:
+def analyze_audio(
+    turn_id: str, raw_path: str, lang: str, qtype: str, question: dict | None, glossary: list[str]
+) -> dict:
     """Audio → VAD → trim → Whisper → metrics. Always deletes the audio."""
     wav = str(TMP / f"{turn_id}_16k.wav")
     trimmed = str(TMP / f"{turn_id}_trim.wav")
@@ -48,8 +51,15 @@ def analyze_audio(turn_id: str, raw_path: str, lang: str, qtype: str, question: 
 def written_answer(text: str) -> dict:
     """Written answer (alternative to voice, W3C: don't require speech). No STT or voice metrics."""
     text = (text or "").strip()
-    return {"has_speech": bool(text), "vad": {}, "transcript": {"text": text, "words": []}, "metrics": None,
-            "low_conf_words": [], "stt_s": 0, "written": True}
+    return {
+        "has_speech": bool(text),
+        "vad": {},
+        "transcript": {"text": text, "words": []},
+        "metrics": None,
+        "low_conf_words": [],
+        "stt_s": 0,
+        "written": True,
+    }
 
 
 def run_practice_turn(turn_id: str, raw_path: str | None, help_requested: bool, text: str | None = None) -> None:
@@ -61,11 +71,17 @@ def run_practice_turn(turn_id: str, raw_path: str | None, help_requested: bool, 
             lang, attempt_of, qid, sid = t.lang, t.attempt_of, t.question_id, t.session_id
             asked, parent_tid = t.question_text, t.parent_turn_id
             parent = s.get(Turn, parent_tid) if parent_tid else None
-            thread = ([{"role": "interviewer", "text": parent.question_text},
-                       {"role": "candidate", "text": (parent.transcript or {}).get("text", "")}] if parent else None)
+            thread = (
+                [
+                    {"role": "interviewer", "text": parent.question_text},
+                    {"role": "candidate", "text": (parent.transcript or {}).get("text", "")},
+                ]
+                if parent
+                else None
+            )
         ctx = context.for_session(sid)
         q = context.in_lang(ctx.question(qid.split("-")[0]), lang)
-        if thread:   # practice follow-up: a different question is asked, but the whole thread is evaluated
+        if thread:  # practice follow-up: a different question is asked, but the whole thread is evaluated
             q = {**q, "text": asked}
         events.emit(cid, "received")
         if text is not None:
@@ -82,23 +98,48 @@ def run_practice_turn(turn_id: str, raw_path: str | None, help_requested: bool, 
             if a["vad"].get("duration_s", 0) >= 4 or help_requested:
                 reason = "silencio: no empezaste a responder"
             else:
-                events.emit(cid, "error", message="No se detectó voz. ¿El micrófono está silenciado?",
-                            code="no_speech", mic_level_db=a["vad"].get("level_speech_db"))
+                events.emit(
+                    cid,
+                    "error",
+                    message="No se detectó voz. ¿El micrófono está silenciado?",
+                    code="no_speech",
+                    mic_level_db=a["vad"].get("level_speech_db"),
+                )
                 _save(turn_id, status="error", error="no_speech")
                 return
         else:
-            events.emit(cid, "transcribed", transcript=a["transcript"], metrics=a["metrics"],
-                        low_conf_words=a["low_conf_words"])
-            reason = "pediste ayuda" if help_requested else coach.looks_blank(
-                a["transcript"]["text"], len(a["transcript"]["words"]) or len(a["transcript"]["text"].split()), lang)
+            events.emit(
+                cid, "transcribed", transcript=a["transcript"], metrics=a["metrics"], low_conf_words=a["low_conf_words"]
+            )
+            reason = (
+                "pediste ayuda"
+                if help_requested
+                else coach.looks_blank(
+                    a["transcript"]["text"], len(a["transcript"]["words"]) or len(a["transcript"]["text"].split()), lang
+                )
+            )
 
         if reason:
             events.emit(cid, "coaching_started", reason=reason, eta_s=15)
-            res = coach.coach(question=q, language=lang, cv=ctx.cv(), job=ctx.job(),
-                              partial_transcript=(a.get("transcript") or {}).get("text", ""), reason=reason)
+            res = coach.coach(
+                question=q,
+                language=lang,
+                cv=ctx.cv(),
+                job=ctx.job(),
+                partial_transcript=(a.get("transcript") or {}).get("text", ""),
+                reason=reason,
+            )
             _check(cid)
-            _save(turn_id, kind="coaching", status="done", transcript=a.get("transcript"), metrics=a.get("metrics"),
-                  coaching=res, cost_usd=res["cost_usd"], timings=timings)
+            _save(
+                turn_id,
+                kind="coaching",
+                status="done",
+                transcript=a.get("transcript"),
+                metrics=a.get("metrics"),
+                coaching=res,
+                cost_usd=res["cost_usd"],
+                timings=timings,
+            )
             events.emit(cid, "coaching", coaching=res)
             _speak(cid, turn_id, res["coaching"]["spoken_summary"])
             events.emit(cid, "done")
@@ -106,28 +147,52 @@ def run_practice_turn(turn_id: str, raw_path: str | None, help_requested: bool, 
 
         events.emit(cid, "evaluating", eta_s=40)
         t0 = time.perf_counter()
-        ev = evaluator.evaluate(interview_type=q["type"], language=lang, question=q["text"],
-                                question_guidance=q["guidance"], transcript=a["transcript"]["text"],
-                                delivery={k: v for k, v in (a["metrics"] or {}).items()
-                                          if k not in ("filler_word_idx", "low_confidence_idx")},
-                                low_conf_words=a["low_conf_words"], cv=ctx.cv(), job=ctx.job(), question_meta=q,
-                                thread=thread, evidence=ctx.evidence_digest())
+        ev = evaluator.evaluate(
+            interview_type=q["type"],
+            language=lang,
+            question=q["text"],
+            question_guidance=q["guidance"],
+            transcript=a["transcript"]["text"],
+            delivery={
+                k: v for k, v in (a["metrics"] or {}).items() if k not in ("filler_word_idx", "low_confidence_idx")
+            },
+            low_conf_words=a["low_conf_words"],
+            cv=ctx.cv(),
+            job=ctx.job(),
+            question_meta=q,
+            thread=thread,
+            evidence=ctx.evidence_digest(),
+        )
         timings["eval"] = round(time.perf_counter() - t0, 1)
         _check(cid)
         if not ev["ok"]:
             _save(turn_id, status="error", error=ev["error"], transcript=a["transcript"], metrics=a["metrics"])
-            events.emit(cid, "error", message="La evaluación no está disponible ahora. Tus métricas de forma sí.",
-                        code="eval_failed")
+            events.emit(
+                cid,
+                "error",
+                message="La evaluación no está disponible ahora. Tus métricas de forma sí.",
+                code="eval_failed",
+            )
             return
         comparison = None
         if attempt_of:
             with db() as s:
                 prev = s.get(Turn, attempt_of)
                 if prev and prev.evaluation:
-                    comparison = metrics.compare({"metrics": prev.metrics, "evaluation": prev.evaluation["evaluation"]},
-                                                 {"metrics": a["metrics"] or {}, "evaluation": ev["evaluation"]})
-        _save(turn_id, status="done", transcript=a["transcript"], metrics=a["metrics"],
-              low_conf_words=a["low_conf_words"], evaluation=ev, cost_usd=ev["cost_usd"], timings=timings)
+                    comparison = metrics.compare(
+                        {"metrics": prev.metrics, "evaluation": prev.evaluation["evaluation"]},
+                        {"metrics": a["metrics"] or {}, "evaluation": ev["evaluation"]},
+                    )
+        _save(
+            turn_id,
+            status="done",
+            transcript=a["transcript"],
+            metrics=a["metrics"],
+            low_conf_words=a["low_conf_words"],
+            evaluation=ev,
+            cost_usd=ev["cost_usd"],
+            timings=timings,
+        )
         events.emit(cid, "evaluated", evaluation=ev, comparison=comparison)
         _speak(cid, turn_id, ev["evaluation"]["spoken_summary"])
         events.emit(cid, "done")

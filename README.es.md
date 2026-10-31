@@ -93,17 +93,22 @@ examples/                 CV y avisos ficticios para probar el flujo completo
 
 ## Requisitos previos
 
-- **macOS con Apple Silicon**: la transcripción usa MLX (GPU Metal). Por eso el backend corre nativo y solo la base va en Docker.
-- Python 3.12, Node.js 20.19+ o 22.12+, Docker (o OrbStack).
+- Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 20.19+ o 22.12+, Docker (u OrbStack).
 - Claves de [OpenRouter](https://openrouter.ai/settings/keys) y [NVIDIA](https://build.nvidia.com).
+- Binarios: `pdftotext` (poppler) para ingestar PDF; `ffmpeg` para responder por voz.
+- **Solo la transcripción de voz: macOS con Apple Silicon** — usa MLX (GPU Metal), instalado
+  como grupo opcional de dependencias. En cualquier otro equipo el backend corre en **modo
+  texto**: respondés por escrito y `/api/health` informa el STT como no disponible. La
+  conversión de DOCX/RTF/ODT también depende de macOS (`textutil`); PDF, TXT, MD, imágenes
+  y links funcionan en cualquier lado.
 
 ## Instalación
 
 ```bash
 cp .env.example .env                 # completá POSTGRES_PASSWORD, OPENROUTER_API_KEY y NVIDIA_API_KEY
-python3.12 -m venv backend/.venv
-backend/.venv/bin/pip install -r backend/requirements.lock.txt
-(cd frontend && npm ci)
+cd backend && uv sync                # modo texto
+uv sync --group stt                  # + transcripción de voz local (Apple Silicon)
+cd ../frontend && npm ci
 ```
 
 La primera transcripción descarga los pesos de Whisper en la revisión fijada en `.env` y verifica su hash
@@ -140,7 +145,7 @@ Todas están documentadas en [`.env.example`](.env.example). Las principales:
 ## Pruebas y verificaciones
 
 ```bash
-cd backend && .venv/bin/python -m pytest          # 63 tests
+cd backend && uv run pytest
 cd frontend && npm test                           # Vitest: contraste de tokens y regla del próximo paso
 cd frontend && npm run lint                       # oxlint
 cd frontend && npm run build                      # tsc + build de producción
@@ -188,7 +193,7 @@ backend/.venv/bin/python evals/run_evaluator_consistency.py --n 5 --repeats 2   
 
 ## Limitaciones conocidas
 
-- Requiere Apple Silicon para la transcripción local; no hay despliegue ni imagen Docker del backend.
+- La transcripción de voz local requiere Apple Silicon; en otros equipos el backend corre en modo texto. No hay despliegue del backend.
 - Uso local y de una sola persona: sin autenticación, sin límite de uso ni tope de gasto del LLM.
 - La calidad del análisis depende del LLM: los estados de evidencia describen el CV y pueden contener inferencias del modelo.
 - Los endpoints de NVIDIA usados son de prueba (sus términos registran input/output).

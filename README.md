@@ -103,19 +103,22 @@ examples/                 fictional CV and postings to try the full flow
 
 ## Prerequisites
 
-- **macOS on Apple Silicon**: transcription uses MLX (Metal GPU). That's why the backend
-  runs natively and only the database lives in Docker.
-- Python 3.12, Node.js 20.19+ or 22.12+, Docker (or OrbStack).
+- Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 20.19+ or 22.12+, Docker (or OrbStack).
 - API keys for [OpenRouter](https://openrouter.ai/settings/keys) and
   [NVIDIA](https://build.nvidia.com).
+- Binaries: `pdftotext` (poppler) for PDF ingestion; `ffmpeg` for voice answers.
+- **Voice transcription only: macOS on Apple Silicon** — it uses MLX (Metal GPU), installed
+  as an optional dependency group. Everywhere else the backend runs in **text mode**: you
+  answer in writing, and `/api/health` reports STT as unavailable. Converting DOCX/RTF/ODT
+  also relies on macOS (`textutil`); PDF, TXT, MD, images and links work anywhere.
 
 ## Install
 
 ```bash
 cp .env.example .env                 # fill in POSTGRES_PASSWORD, OPENROUTER_API_KEY and NVIDIA_API_KEY
-python3.12 -m venv backend/.venv
-backend/.venv/bin/pip install -r backend/requirements.lock.txt
-(cd frontend && npm ci)
+cd backend && uv sync                # text mode
+uv sync --group stt                  # + local voice transcription (Apple Silicon)
+cd ../frontend && npm ci
 ```
 
 The first transcription downloads the Whisper weights at the revision pinned in `.env`
@@ -154,7 +157,7 @@ Everything is documented in [`.env.example`](.env.example). The main ones:
 ## Tests and checks
 
 ```bash
-cd backend && .venv/bin/python -m pytest          # 63 tests
+cd backend && uv run pytest
 cd frontend && npm test                           # Vitest: token contrast and the next-step rule
 cd frontend && npm run lint                       # oxlint
 cd frontend && npm run build                      # tsc + production build
@@ -207,8 +210,8 @@ backend/.venv/bin/python evals/run_evaluator_consistency.py --n 5 --repeats 2   
 
 ## Known limitations
 
-- Local transcription requires Apple Silicon; there's no deployment or Docker image of
-  the backend.
+- Local voice transcription requires Apple Silicon; elsewhere the backend runs in text
+  mode. There's no deployment of the backend.
 - Single-person local use: no auth, no rate limiting, no LLM spending cap.
 - Analysis quality depends on the LLM: evidence states describe the CV and may contain
   model inferences.

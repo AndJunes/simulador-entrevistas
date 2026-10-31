@@ -2,6 +2,7 @@
 
 Revision ID: 0001
 """
+
 import sqlalchemy as sa
 from alembic import op
 from pgvector.sqlalchemy import Vector
