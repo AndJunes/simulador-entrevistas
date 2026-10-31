@@ -1,6 +1,7 @@
-# Solo la base de datos va en Docker.
-# El backend corre nativo en macOS porque Whisper (MLX) necesita la GPU Metal de Apple Silicon,
-# que no está disponible dentro de un contenedor Linux.
+# Day to day only the database runs in Docker: the backend runs natively on
+# macOS because Whisper (MLX) needs the Apple Silicon GPU. The optional "api"
+# profile runs the text-mode backend image anywhere:
+#   docker compose --env-file .env --profile api up -d
 services:
   db:
     image: pgvector/pgvector:0.8.7-pg17   # imagen oficial de pgvector, versión fijada
@@ -19,6 +20,27 @@ services:
       timeout: 3s
       retries: 20
     restart: unless-stopped
+
+  api:
+    profiles: ["api"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: simulador-api
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: db
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:

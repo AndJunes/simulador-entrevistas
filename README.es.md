@@ -124,6 +124,13 @@ Levanta Postgres (Docker), aplica las migraciones, inicia el backend en `127.0.0
 `http://127.0.0.1:5173`. Al arrancar, el backend indexa el corpus de `knowledge/` (solo re-embebe lo que cambió).
 `Ctrl+C` apaga backend y front; la base sigue corriendo (`docker compose down` para apagarla).
 
+Fuera de macOS — o para probar la API sin instalar Python — el backend en modo texto
+también corre como contenedor (base + migraciones + API):
+
+```bash
+docker compose --env-file .env --profile api up -d
+```
+
 ## Probalo con datos de ejemplo
 
 En [`examples/`](examples/) hay un CV y tres avisos **ficticios** (backend Python, AI engineer y full stack).
