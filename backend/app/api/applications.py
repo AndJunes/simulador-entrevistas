@@ -31,7 +31,9 @@ async def ingest_doc(
     url: str | None = Form(None),
 ):
     """Converts a CV or a job posting (file, text, or link) to Markdown for review. Saves nothing."""
-    data = await file.read() if file is not None else None
+    # Capped read: extract_file re-checks the limit, but the body must never land
+    # whole in memory first.
+    data = await file.read(ingest.MAX_FILE_BYTES + 1) if file is not None else None
     try:
         return await run_in_threadpool(
             ingest.ingest, kind, data=data, filename=file.filename if file else None, text=text, url=url
