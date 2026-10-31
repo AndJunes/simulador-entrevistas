@@ -15,6 +15,7 @@ import subprocess
 import uuid
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import Any, cast
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -85,7 +86,7 @@ def _assert_public_host(host: str) -> None:
     except socket.gaierror:
         raise IngestError("No encontramos ese sitio. Revisá el link.") from None
     for info in infos:
-        ip = ipaddress.ip_address(info[4][0].split("%")[0])
+        ip = ipaddress.ip_address(cast(str, info[4][0]).split("%")[0])
         if (
             ip.is_private
             or ip.is_loopback
@@ -199,7 +200,7 @@ def to_markdown(raw: str, kind: str, image: tuple[str, bytes] | None = None) -> 
     )
     if image:
         mime, data = image
-        content = [
+        content: Any = [
             {"type": "text", "text": "Transcribe this image to Markdown following the rules."},
             {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{base64.b64encode(data).decode()}"}},
         ]

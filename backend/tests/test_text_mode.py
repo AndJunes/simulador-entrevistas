@@ -1,6 +1,10 @@
 """Text mode: without the optional STT stack the API refuses audio clearly and
 reports the state in /api/health, instead of failing mid-request."""
 
+import os
+
+os.environ["APP_BOOTSTRAP"] = "0"  # don't sweep or index a real database from tests
+
 from fastapi.testclient import TestClient
 
 from app import main

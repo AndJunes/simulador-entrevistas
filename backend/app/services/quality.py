@@ -89,7 +89,7 @@ def summary(application_id: str | None = None) -> dict:
 
         # --- evaluator and feedback
         evald = [t for t in turns if t.evaluation and t.evaluation.get("ok")]
-        evs = [t.evaluation["evaluation"] for t in evald]
+        evs = [(t.evaluation or {})["evaluation"] for t in evald]
         rated = [t for t in turns if t.feedback_rating in (1, -1)]
         deltas = []
         by_id = {t.id: t for t in turns}
@@ -100,7 +100,7 @@ def summary(application_id: str | None = None) -> dict:
                 if prev and prev.evaluation
                 else None
             )
-            cc = t.evaluation["evaluation"].get("competency")
+            cc = (t.evaluation or {})["evaluation"].get("competency")
             if pc and cc and pc.get("score") and cc.get("score"):
                 deltas.append(cc["score"] - pc["score"])
         evaluator = {
@@ -118,7 +118,7 @@ def summary(application_id: str | None = None) -> dict:
 
         # --- per-session competency coverage (mock interviews)
         cover = []
-        app_q = {
+        app_q: dict[str | None, dict] = {
             a.id: {q["id"]: q for q in (normalize_question(x, i) for i, x in enumerate(a.questions or []))}
             for a in apps
         }

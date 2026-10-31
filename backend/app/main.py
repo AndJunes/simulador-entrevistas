@@ -48,7 +48,9 @@ def _bootstrap():
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    threading.Thread(target=_bootstrap, daemon=True).start()
+    # APP_BOOTSTRAP=0 keeps tests from sweeping or indexing a real database.
+    if env("APP_BOOTSTRAP", "1") == "1":
+        threading.Thread(target=_bootstrap, daemon=True).start()
     yield
 
 

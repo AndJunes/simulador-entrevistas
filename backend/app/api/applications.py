@@ -70,7 +70,7 @@ def create_application(req: NewApplication):
 def list_applications():
     with db() as s:
         apps = s.execute(select(Application).order_by(Application.updated_at.desc())).scalars().all()
-        counts = defaultdict(dict)
+        counts: defaultdict[str | None, dict] = defaultdict(dict)
         rows = s.execute(
             select(
                 Session.application_id,

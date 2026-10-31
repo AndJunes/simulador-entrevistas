@@ -58,6 +58,7 @@ def clarify(sid: str, qid: str, question: str) -> dict:
     ex = q.get("exercise") or {}
     with db() as s:
         sess = s.get(Session, sid)
+        assert sess is not None
         lang = sess.lang
         prev = list(((sess.settings or {}).get("clarifications") or {}).get(qid, []))
     if len(prev) >= MAX_CLARIFICATIONS:
@@ -77,6 +78,7 @@ def clarify(sid: str, qid: str, question: str) -> dict:
     item = {"q": question, "a": c.answer.strip(), "specified": c.specified}
     with db() as s:
         sess = s.get(Session, sid)
+        assert sess is not None
         settings = dict(sess.settings or {})
         cl = dict(settings.get("clarifications") or {})
         cl[qid] = prev + [item]
@@ -95,6 +97,7 @@ def submit(sid: str, qid: str, text: str, elapsed_s: float | None) -> str:
     q = ctx.question(qid)
     with db() as s:
         sess = s.get(Session, sid)
+        assert sess is not None
         lang = sess.lang
         clar = ((sess.settings or {}).get("clarifications") or {}).get(qid, [])
         t = Turn(
@@ -144,6 +147,7 @@ def _evaluate(tid: str, app_id: str, qid: str, lang: str, text: str, clar: list)
         )
         with db() as s:
             t = s.get(Turn, tid)
+            assert t is not None
             if ev["ok"]:
                 t.evaluation, t.cost_usd, t.status = ev, ev["cost_usd"], "done"
                 t.timings = {"eval": round(time.perf_counter() - t0, 1)}
@@ -158,7 +162,9 @@ def _evaluate(tid: str, app_id: str, qid: str, lang: str, text: str, clar: list)
         try:
             key = tts.synthesize(ev["evaluation"]["spoken_summary"], "es", "coach")
             with db() as s:
-                s.get(Turn, tid).tts_key = key
+                t = s.get(Turn, tid)
+                assert t is not None
+                t.tts_key = key
             events.emit(tid, "tts_ready", audio_url=f"/api/audio/{key}.wav")
         except Exception as e:  # noqa: BLE001
             events.emit(tid, "tts_failed", message=str(e)[:200])
@@ -167,5 +173,6 @@ def _evaluate(tid: str, app_id: str, qid: str, lang: str, text: str, clar: list)
         log.error("exercise %s failed: %s", tid, traceback.format_exc())
         with db() as s:
             t = s.get(Turn, tid)
+            assert t is not None
             t.status, t.error = "error", str(e)[:500]
         events.emit(tid, "error", message="Algo falló evaluando el ejercicio. Probá de nuevo.", code="internal")

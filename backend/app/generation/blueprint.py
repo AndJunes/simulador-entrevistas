@@ -100,7 +100,7 @@ def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> lis
             for r in exp
         ]
     technical = bool(analysis.get("is_technical")) and bool(tech)
-    stages = []
+    stages: list[dict] = []
 
     # --- A. Recruiter screen (15–20 min): background, motivation, experience vs. requirement, one delivery example,
     #        logistics at the end. English is checked naturally throughout the stage if the role requires it.
@@ -190,7 +190,8 @@ def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> lis
     # --- B. Technical (35–45 min): one technical must-have per question + a deep dive into a CV project.
     if technical:
         st = "technical_screen"
-        ts, seen = [], set()
+        ts: list[dict] = []
+        seen: set[str] = set()
         for r in tech:
             if r["competency"] in seen:
                 continue
@@ -310,7 +311,7 @@ def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> lis
     # --- D. Work sample: tasks resembling the real job (OPM, work samples).
     if technical:
         st = "work_sample"
-        ws = []
+        ws: list[dict] = []
         for r in [r for r in tech if r.get("priority") == "must_have"][:2]:
             ws.append(
                 _slot(

@@ -178,7 +178,8 @@ def penalty(issues: list[str]) -> float:
 
 def dedupe(questions: list[dict], threshold: float = 0.6) -> tuple[list[dict], list[dict]]:
     """Removes near-identical questions (keeps the first, already sorted by quality)."""
-    kept, dropped = [], []
+    kept: list[dict] = []
+    dropped: list[dict] = []
     for q in questions:
         twin = next((k for k in kept if similarity(q["text_en"], k["text_en"]) >= threshold), None)
         (dropped if twin else kept).append(q if not twin else {**q, "_dup_of": twin.get("id") or twin.get("slot_id")})

@@ -2,6 +2,7 @@
 
 import statistics
 from collections import defaultdict
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, select
@@ -89,6 +90,7 @@ def progress(application_id: str | None = None):
         return round(statistics.mean(xs), 2) if xs else None
 
     out, comp_labels = [], {}
+    c: Any
     for day, ts in sorted(by_day.items()):
         ms = [t.metrics for t in ts if t.metrics]
         crit, comp = defaultdict(list), defaultdict(list)

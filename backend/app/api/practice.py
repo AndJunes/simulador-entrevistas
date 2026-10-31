@@ -64,7 +64,7 @@ async def new_turn(
         t = Turn(
             session_id=session_id,
             question_id=f"{q['id']}-F" if followup_of else q["id"],
-            question_text=followup_text.strip()[:500] if followup_of else q["text"],
+            question_text=(followup_text or "").strip()[:500] if followup_of else q["text"],
             question_type=q["type"],
             lang=lang,
             attempt_of=attempt_of or None,
