@@ -5,6 +5,12 @@ No se concede ninguna licencia para usar, copiar, modificar, fusionar, publicar,
 distribuir, sublicenciar ni vender este software, total o parcialmente, sin
 autorización previa y por escrito de la persona titular de los derechos.
 
+Excepción para evaluación: se permite clonar este repositorio, instalarlo y
+ejecutarlo en un entorno local con el único fin de evaluar técnicamente el
+proyecto o a su autora (por ejemplo, en un proceso de selección). Esta
+excepción no autoriza a redistribuir el código, usarlo en producción ni crear
+trabajos derivados.
+
 Componentes de terceros incluidos o utilizados, cada uno bajo su propia licencia:
 - Ilustraciones de unDraw (https://undraw.co/license), modificadas.
 - Fuentes Geist y Geist Mono (SIL Open Font License 1.1).
@@ -17,3 +23,9 @@ Copyright (c) 2026 AndJunes. All rights reserved.
 This repository is published for viewing purposes only. No license is granted to
 use, copy, modify, merge, publish, distribute, sublicense or sell this software,
 in whole or in part, without prior written permission from the copyright holder.
+
+Evaluation exception: you may clone this repository and install and run it in a
+local environment for the sole purpose of technically evaluating the project or
+its author (for example, as part of a hiring process). This exception does not
+permit redistributing the code, using it in production, or creating derivative
+works.
