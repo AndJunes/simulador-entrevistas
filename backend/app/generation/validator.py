@@ -1,10 +1,10 @@
-"""Validación de preguntas (etapa 6): chequeos determinísticos + una pasada crítica con LLM.
+"""Question validation (stage 6): deterministic checks + an LLM critique pass.
 
-Los determinísticos atrapan errores típicos de un banco generado por LLM:
-- premisas no fundamentadas (p. ej. preguntar por "async" en un proyecto que usó threads);
-- preguntas dobles (p. ej. construir Y evaluar un RAG);
-- preguntas inductivas ("such as…", "would you use X, Y, Z?");
-- duplicados y duraciones fuera de rango.
+The deterministic ones catch typical errors of an LLM-generated bank:
+- unsupported premises (e.g. asking about "async" on a project that used threads);
+- double questions (e.g. build AND evaluate a RAG);
+- leading questions ("such as…", "would you use X, Y, Z?");
+- duplicates and out-of-range durations.
 """
 import re
 
@@ -47,7 +47,7 @@ def _ev_terms(e: dict) -> set[str]:
 
 
 def premise_issues(q: dict, evidence: list[dict]) -> list[str]:
-    """Una pregunta personalizada (cita E#) no puede atribuirle a esa experiencia una tecnología que el CV no le asocia."""
+    """A personalized question (citing E#) cannot attribute to that experience a technology the CV doesn't tie to it."""
     refs = [e for e in evidence if e.get("id") in q.get("candidate_evidence_ids", [])]
     if not refs:
         return []
@@ -65,8 +65,8 @@ def deterministic_issues(q: dict, evidence: list[dict]) -> list[str]:
     issues = []
     text = q.get("text_en", "")
     fmt = q.get("format", "")
-    # Pregunta doble = dos TAREAS distintas (p. ej. "construir Y evaluar un RAG"). En conductuales y de
-    # logística, una segunda pregunta que detalla la misma historia o condición es normal.
+    # Double question = two distinct TASKS (e.g. "build AND evaluate a RAG"). In behavioral and
+    # logistics questions, a second question detailing the same story or condition is normal.
     if fmt not in ("design", "exercise") and (text.count("?") > 2 or (
             fmt in ("technical_knowledge", "situational", "debugging") and (text.count("?") > 1 or DOUBLE.search(text)))):
         issues.append("pregunta múltiple: pide más de una cosa a la vez")
@@ -98,7 +98,7 @@ def penalty(issues: list[str]) -> float:
 
 
 def dedupe(questions: list[dict], threshold: float = 0.6) -> tuple[list[dict], list[dict]]:
-    """Saca preguntas casi iguales (se queda con la primera, que ya viene ordenada por calidad)."""
+    """Removes near-identical questions (keeps the first, already sorted by quality)."""
     kept, dropped = [], []
     for q in questions:
         twin = next((k for k in kept if similarity(q["text_en"], k["text_en"]) >= threshold), None)

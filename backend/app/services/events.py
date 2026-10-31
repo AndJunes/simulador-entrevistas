@@ -1,7 +1,7 @@
-"""Bus de eventos en memoria para el progreso por etapas (SSE). Un canal por turno o por informe.
+"""In-memory event bus for per-stage progress (SSE). One channel per turn or per report.
 
-El pipeline corre en hilos (STT/LLM son bloqueantes); el SSE lee el canal y reenvía lo nuevo.
-Un cliente que se conecta tarde recibe la historia completa del canal (no se pierde ninguna etapa).
+The pipeline runs in threads (STT/LLM are blocking); the SSE reads the channel and forwards what's new.
+A client that connects late gets the channel's full history (no stage is lost).
 """
 import threading
 import time
@@ -24,7 +24,7 @@ _lock = threading.Lock()
 def open_channel(cid: str) -> None:
     with _lock:
         _channels[cid] = Channel()
-        # limpieza simple: canales de más de 2 h
+        # simple cleanup: channels older than 2 h
         for k in [k for k, c in _channels.items() if time.time() - c.created > 7200]:
             _channels.pop(k, None)
 
@@ -50,7 +50,7 @@ def is_cancelled(cid: str) -> bool:
 
 
 def read_from(cid: str, idx: int) -> tuple[list[dict], bool]:
-    """Eventos desde idx y si el canal ya terminó."""
+    """Events from idx on, and whether the channel already finished."""
     with _lock:
         ch = _channels.get(cid)
         if not ch:

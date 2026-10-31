@@ -1,10 +1,10 @@
-"""Pipeline de generación v2: tareas separadas para poder probar cada etapa y ver dónde falla.
+"""Generation pipeline v2: separate tasks so each stage can be tested and failures located.
 
   job_analyzer ─┐
-                ├─► evidence_map ─► blueprint (determinístico) ─► question_generator (por etapa, en paralelo)
-  resume_evidence┘                                                   └─► question_validator ─► selección
+                ├─► evidence_map ─► blueprint (deterministic) ─► question_generator (per stage, in parallel)
+  resume_evidence┘                                                   └─► question_validator ─► selection
 
-Funciones puras (sin base de datos): las usa la app y también los evals (`evals/run_generator.py`).
+Pure functions (no database): used by the app and also by the evals (`evals/run_generator.py`).
 """
 import json
 import logging
@@ -182,8 +182,8 @@ def _to_question(g, stage: str, slot: dict) -> dict:
 
 
 def select(cands: list[dict], crit: dict[int, dict], evidence: list[dict]) -> tuple[list[dict], list[dict]]:
-    """Mejor candidata por slot: puntaje de la crítica menos penalización por issues determinísticos.
-    Si la crítica propone una reescritura que reduce los issues, se usa la reescritura."""
+    """Best candidate per slot: critique score minus a penalty for deterministic issues.
+    If the critique proposes a rewrite that reduces the issues, the rewrite is used."""
     by_slot: dict[str, list] = {}
     for i, c in enumerate(cands):
         c = dict(c)
@@ -196,7 +196,7 @@ def select(cands: list[dict], crit: dict[int, dict], evidence: list[dict]) -> tu
             alt_det = val.deterministic_issues(alt, evidence)
             if val.penalty(alt_det) <= val.penalty(det):
                 c, det = {**alt, "rewritten": True}, alt_det
-                cr = {**cr, "issues": []}   # la reescritura resuelve lo señalado por la crítica
+                cr = {**cr, "issues": []}   # the rewrite resolves what the critique flagged
         issues = det + [f"crítica: {x}" for x in cr.get("issues", [])]
         score = round(avg - val.penalty(det), 2)
         c["validation"] = {"score": score, "issues": issues, "critic": {k: cr.get(k) for k in (
@@ -212,7 +212,7 @@ def select(cands: list[dict], crit: dict[int, dict], evidence: list[dict]) -> tu
 
 
 def run(cv_md: str, job_md: str, progress=lambda stage, **kw: None) -> dict:
-    """CV + puesto → todo lo que la postulación necesita. Devuelve un dict listo para guardar."""
+    """CV + job → everything the application needs. Returns a dict ready to save."""
     costs = {}
     progress("analyzing_job", eta_s=90)
     with ThreadPoolExecutor(2) as ex:
@@ -252,11 +252,11 @@ def run(cv_md: str, job_md: str, progress=lambda stage, **kw: None) -> dict:
     try:
         cb, costs["critic"] = critique(cands, evidence, analysis.get("seniority", ""))
         crit_map = {c.candidate: c.model_dump() for c in cb.critiques}
-    except Exception as e:  # noqa: BLE001  (sin crítica, quedan los chequeos determinísticos)
+    except Exception as e:  # noqa: BLE001  (without the critique, the deterministic checks remain)
         log.warning("crítica falló: %s", e)
     chosen, discarded = select(cands, crit_map, evidence)
 
-    # orden: etapa → orden del slot (pitch → motivación → … → logística al final)
+    # order: stage → slot order (pitch → motivation → … → logistics last)
     slot_order = {s["slot_id"]: (STAGE_ORDER.index(st["stage"]), i) for st in stages for i, s in enumerate(st["slots"])}
     chosen.sort(key=lambda q: slot_order.get(q["slot_id"], (9, 99)))
     chosen, dups = val.dedupe(chosen)

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-/** Alternativa a la voz (W3C: no exigir el habla). Ctrl/⌘+Enter envía. */
+/** Alternative to voice (W3C: don't require speech). Ctrl/⌘+Enter sends. */
 export function WrittenAnswer({ value, onChange, onSend, onCancel, dark }: { value: string; onChange: (v: string) => void; onSend: () => void; onCancel: () => void; dark?: boolean }) {
   return (
     <div className="flex flex-col gap-2">

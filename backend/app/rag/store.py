@@ -1,7 +1,7 @@
-"""RAG sobre Postgres + pgvector: ingestión incremental y recuperación filtrada por metadata.
+"""RAG on Postgres + pgvector: incremental ingestion and metadata-filtered retrieval.
 
-Ingestión: solo re-embebe los chunks cuyo contenido cambió (content_hash) y borra los que ya no existen.
-Recuperación: filtro por (interview_type, language) ANTES de la búsqueda por similitud.
+Ingestion: only re-embeds chunks whose content changed (content_hash) and deletes the ones gone.
+Retrieval: filter by (interview_type, language) BEFORE the similarity search.
 """
 import logging
 

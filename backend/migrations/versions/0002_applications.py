@@ -1,4 +1,4 @@
-"""Postulaciones: CV + puesto por postulación; las sesiones cuelgan de una postulación.
+"""Applications: CV + job per application; sessions hang off an application.
 
 Revision ID: 0002
 Revises: 0001

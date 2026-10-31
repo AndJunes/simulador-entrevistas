@@ -1,7 +1,7 @@
-"""Contexto de UNA postulación: CV, puesto y banco de preguntas (vienen de la tabla `applications`).
+"""Context of ONE application: CV, job and question bank (from the `applications` table).
 
-API: cv(), job(), questions(), question(), glossary(), candidate_first_name(), interview_info(), por postulación
-vía `for_app(app_id)`. Caché por (id, updated_at): si editás la postulación, se recarga sola.
+API: cv(), job(), questions(), question(), glossary(), candidate_first_name(), interview_info(), per application
+via `for_app(app_id)`. Cached by (id, updated_at): editing the application reloads it automatically.
 """
 import re
 import threading
@@ -12,7 +12,7 @@ from app.db.session import db
 from app.generation import blueprint as bp
 from app.generation.schema import DEFAULT_DURATION, normalize_question  # noqa: F401  (re-export)
 
-# Términos técnicos frecuentes: si aparecen en el CV o el puesto, se le pasan a Whisper como pista.
+# Common technical terms: if they appear in the CV or the job, they're passed to Whisper as a hint.
 COMMON_TERMS = ["Python", "FastAPI", "PostgreSQL", "SQLAlchemy", "Alembic", "Redis", "Rust", "Go", "Node.js",
                 "NestJS", "TypeScript", "JavaScript", "React", "Angular", "Next.js", "Docker", "Kubernetes", "AWS",
                 "GCP", "Azure", "Cloud Run", "Pub/Sub", "Kafka", "gRPC", "GraphQL", "REST", "JWT", "OAuth", "RBAC",
@@ -37,19 +37,19 @@ class AppContext:
     analysis: dict = field(default_factory=dict)
     company_facts: list = field(default_factory=list)
 
-    # --- API pública del contexto
+    # --- public context API
     def cv(self) -> str:
         return self.cv_md
 
     def job(self) -> str:
-        """El puesto tal como lo ve el evaluador: el aviso + los requisitos con ID (R1…)."""
+        """The job as the evaluator sees it: the posting + the requirements with IDs (R1…)."""
         reqs = "\n".join(f"| {r['id']} | {r.get('text', '')} | {r.get('priority', '')} | {r.get('coverage', '')} | {r.get('cv_evidence', '')} |"
                          for r in self.requirements)
         head = f"# Puesto — {self.title}{f' · {self.company}' if self.company else ''}\n\n"
         return head + self.job_md + (f"\n\n## Requisitos (IDs para trazabilidad)\n| ID | Requisito | Prioridad | Cobertura en el CV | Evidencia en el CV |\n|---|---|---|---|---|\n{reqs}\n" if reqs else "")
 
     def evidence_digest(self) -> str:
-        """Evidencias del CV con su tipo (profesional, proyecto…): el evaluador separa experiencia de conocimiento."""
+        """CV evidence with its kind (professional, project…): the evaluator separates experience from knowledge."""
         return "\n".join(f"- {e['id']} [{e.get('kind', '')}] {e.get('title', '')} ({e.get('org', '')}, {e.get('dates', '')}): "
                          f"tecnologías {', '.join(e.get('technologies', []))}" for e in self.evidence)
 
@@ -117,17 +117,17 @@ def for_session(session_id: str) -> AppContext:
     return for_app(app_id)
 
 
-# ----------------------------------------------------------------------------- migración del formato viejo
+# ----------------------------------------------------------------------------- legacy-format migration
 
 def parse_legacy_job(md: str) -> dict:
-    """Lee el formato legado en Markdown (tabla de preguntas y requisitos) para migrarlo sin gastar LLM."""
+    """Reads the legacy Markdown format (question and requirement tables) to migrate it without spending LLM calls."""
     qs = []
     for line in md.splitlines():
         m = re.match(r"^\|\s*(Q\d+)\s*\|(.+?)\|(.+?)\|\s*(screening|star)\s*\|(?:(.+?)\|)?", line)
         if m:
             qs.append({"id": m.group(1), "text_en": m.group(2).strip(), "guidance": m.group(3).strip(),
                        "type": m.group(4), "text_es": (m.group(5) or m.group(2)).strip()})
-    for q in qs:   # en el formato legado: Q1 es el pitch; Q8/Q9 (logística, otros procesos) no llevan repregunta
+    for q in qs:   # legacy format: Q1 is the pitch; Q8/Q9 (logistics, other processes) take no follow-up
         q["pitch"] = q["id"] == "Q1"
         q["followup"] = q["id"] not in ("Q8", "Q9")
         q["duration"] = [60, 90] if q["pitch"] else DEFAULT_DURATION[q["type"]]

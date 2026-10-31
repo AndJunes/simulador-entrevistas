@@ -1,4 +1,4 @@
-"""Ingesta: extracción de texto por formato y protección anti-SSRF (sin red ni LLM)."""
+"""Ingestion: per-format text extraction and anti-SSRF protection (no network or LLM)."""
 import shutil
 import subprocess
 

@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils"
 type Phase = "pick" | "working" | "evaluating" | "feedback"
 const MAX_CHARS = 20000
 
-/** Ejercicio práctico (work sample): consigna y criterios visibles, aclaraciones, respuesta escrita. El código no se ejecuta. */
+/** Practical exercise (work sample): visible brief and criteria, clarifications, written answer. Code is not executed. */
 export default function Exercise() {
   const appId = useAppId()
   const ctx = useAppContext()
@@ -58,17 +58,17 @@ export default function Exercise() {
   if (ctx.isLoading) return <Skeleton className="h-64 w-full" />
   const exercises = (ctx.data?.questions ?? []).filter((x) => x.format === "exercise" && x.exercise)
 
-  // Borrador guardado en este navegador (COGA 4.5.9: evitar perder trabajo). Es comodidad, no dato crítico.
+  // Draft saved in this browser (COGA 4.5.9: avoid losing work). Convenience, not critical data.
   const draftKey = (qid: string) => `simulador.exercise.${appId}.${qid}`
   useEffect(() => {
     if (!q || phase !== "working") return
-    try { localStorage.setItem(draftKey(q.id), text) } catch { /* sin almacenamiento */ }
+    try { localStorage.setItem(draftKey(q.id), text) } catch { /* storage unavailable */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text])
 
   function start(x: Question) {
     let saved = ""
-    try { saved = localStorage.getItem(draftKey(x.id)) ?? "" } catch { /* sin almacenamiento */ }
+    try { saved = localStorage.getItem(draftKey(x.id)) ?? "" } catch { /* storage unavailable */ }
     setQ(x); setText(saved); setClar([]); setEv(null); setTurnId(null)
     setStartedAt(Date.now()); setNow(Date.now()); setPhase("working")
     setAnnounce("Ejercicio abierto. Leé la consigna y los criterios.")
@@ -89,7 +89,7 @@ export default function Exercise() {
     try {
       const { turn_id } = await api.submitExercise(sid, q.id, text, (Date.now() - startedAt) / 1000)
       setTurnId(turn_id); setPhase("evaluating"); setAnnounce("Evaluando tu ejercicio.")
-      try { localStorage.removeItem(draftKey(q.id)) } catch { /* sin almacenamiento */ }
+      try { localStorage.removeItem(draftKey(q.id)) } catch { /* storage unavailable */ }
       closeSse.current?.()
       closeSse.current = followStages(`/api/turns/${turn_id}/events`, (e) => {
         if (e.stage === "evaluated") { setEv(e.evaluation); setPhase("feedback"); setAnnounce("Devolución lista.") }
@@ -98,7 +98,7 @@ export default function Exercise() {
     } catch (e) { toast.error((e as Error).message) }
   }
 
-  // Elegir ejercicio
+  // Pick an exercise
   if (phase === "pick" || !q) {
     return (
       <div className="flex flex-col gap-6">
@@ -178,7 +178,7 @@ export default function Exercise() {
             <>
               <label htmlFor="answer" className="text-sm font-medium">Tu respuesta <span className="font-normal text-muted-foreground">(código + una explicación breve del enfoque, supuestos y trade-offs)</span></label>
               <textarea id="answer" value={text} onChange={(e) => setText(e.target.value.slice(0, MAX_CHARS))} spellCheck={false}
-                onKeyDown={(e) => {   // Tab inserta 4 espacios (Esc + Tab sale del editor, para teclado)
+                onKeyDown={(e) => {   // Tab inserts 4 spaces (Esc + Tab leaves the editor, for keyboard users)
                   if (e.key === "Tab" && !e.shiftKey && !e.altKey) {
                     e.preventDefault()
                     const el = e.currentTarget, a = el.selectionStart, b = el.selectionEnd

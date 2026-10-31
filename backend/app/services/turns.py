@@ -1,7 +1,7 @@
-"""Procesamiento de un turno de práctica con eventos por etapa (la espera supera 10 s).
+"""Practice-turn processing with per-stage events (the wait exceeds 10 s).
 
-received → transcribing → transcribed(transcripción+métricas) → evaluating → evaluated → tts_ready → done
-                                   └→ coaching (modo en blanco) → tts_ready → done
+received → transcribing → transcribed(transcript+metrics) → evaluating → evaluated → tts_ready → done
+                                   └→ coaching (blank mode) → tts_ready → done
 """
 import logging
 import time
@@ -26,7 +26,7 @@ def _check(cid: str):
 
 
 def analyze_audio(turn_id: str, raw_path: str, lang: str, qtype: str, question: dict | None, glossary: list[str]) -> dict:
-    """Audio → VAD → recorte → Whisper → métricas. Borra el audio siempre."""
+    """Audio → VAD → trim → Whisper → metrics. Always deletes the audio."""
     wav = str(TMP / f"{turn_id}_16k.wav")
     trimmed = str(TMP / f"{turn_id}_trim.wav")
     try:
@@ -46,7 +46,7 @@ def analyze_audio(turn_id: str, raw_path: str, lang: str, qtype: str, question: 
 
 
 def written_answer(text: str) -> dict:
-    """Respuesta escrita (alternativa a la voz, W3C: no exigir el habla). Sin STT ni métricas de voz."""
+    """Written answer (alternative to voice, W3C: don't require speech). No STT or voice metrics."""
     text = (text or "").strip()
     return {"has_speech": bool(text), "vad": {}, "transcript": {"text": text, "words": []}, "metrics": None,
             "low_conf_words": [], "stt_s": 0, "written": True}
@@ -65,7 +65,7 @@ def run_practice_turn(turn_id: str, raw_path: str | None, help_requested: bool, 
                        {"role": "candidate", "text": (parent.transcript or {}).get("text", "")}] if parent else None)
         ctx = context.for_session(sid)
         q = context.in_lang(ctx.question(qid.split("-")[0]), lang)
-        if thread:   # repregunta de práctica: se pregunta otra cosa, pero se evalúa el hilo completo
+        if thread:   # practice follow-up: a different question is asked, but the whole thread is evaluated
             q = {**q, "text": asked}
         events.emit(cid, "received")
         if text is not None:
@@ -147,7 +147,7 @@ def _speak(cid: str, turn_id: str, text: str) -> None:
         key = tts.synthesize(text, "es", "coach")
         _save(turn_id, tts_key=key)
         events.emit(cid, "tts_ready", audio_url=f"/api/audio/{key}.wav")
-    except Exception as e:  # noqa: BLE001  (el feedback escrito no depende del TTS)
+    except Exception as e:  # noqa: BLE001  (written feedback doesn't depend on TTS)
         events.emit(cid, "tts_failed", message=str(e)[:200])
 
 

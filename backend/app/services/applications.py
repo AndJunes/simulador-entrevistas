@@ -1,6 +1,6 @@
-"""Generación de una postulación a partir del CV y el puesto (pipeline v2 por etapas: app/generation/).
+"""Application generation from the CV and the job (staged v2 pipeline: app/generation/).
 
-Corre en un hilo de fondo y emite progreso por el canal SSE `app:<id>`.
+Runs in a background thread and emits progress on the `app:<id>` SSE channel.
 """
 import logging
 import re
@@ -51,8 +51,8 @@ def generate(app_id: str) -> None:
 
 
 def clean_questions(raw: list[dict]) -> list[dict]:
-    """Normaliza preguntas editadas a mano. Conserva los IDs existentes (el historial los referencia);
-    las preguntas nuevas reciben el siguiente ID libre. Descarta las vacías."""
+    """Normalizes hand-edited questions. Keeps existing IDs (history references them);
+    new questions get the next free ID. Drops empty ones."""
     kept = [q for q in raw if (q.get("text_es") or "").strip() or (q.get("text_en") or "").strip()]
     used, out = set(), []
     for q in kept:

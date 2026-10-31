@@ -1,13 +1,13 @@
-"""Evaluador + feedback en UNA llamada (optimización de latencia).
+"""Evaluator + feedback in ONE call (latency optimization).
 
-Rúbrica: knowledge/<rúbrica>/<idioma>/rubrica.md completa. Contexto: chunks recuperados de pgvector.
+Rubric: the full knowledge/<rubric>/<language>/rubrica.md. Context: chunks retrieved from pgvector.
 
-Evaluación explicable:
-- escala anclada 1–5 igual para todos los criterios; los criterios que no aplican no puntúan;
-- puntaje por COMPETENCIA (la de la pregunta) con nivel de evidencia: profesional, proyecto, académico/hackathon,
-  teórico o ninguna, así se separa experiencia de conocimiento;
-- checklist contra la evidencia esperada (privada) de la pregunta: demostrado / parcial / no demostrado;
-- la logística no puntúa como competencia.
+Explainable evaluation:
+- anchored 1–5 scale, the same for every criterion; non-applicable criteria don't score;
+- score per COMPETENCY (the question's) with an evidence level: professional, project, academic/hackathon,
+  theoretical or none, separating experience from knowledge;
+- checklist against the question's (private) expected evidence: demonstrated / partial / not demonstrated;
+- logistics doesn't score as a competency.
 """
 import json
 import re
@@ -36,11 +36,11 @@ CRITERIA = {
 }
 RUBRIC_DOC = {"star": "star", "screening": "screening", "logistics": "screening", "closing": "screening",
               "technical": "technical", "exercise": "work_sample"}
-# criterios que pueden no aplicar a una pregunta concreta (el resto aplica siempre)
+# criteria that may not apply to a given question (the rest always apply)
 OPTIONAL = {"learning", "motivation_company_knowledge", "professionalism_logistics", "security_permissions",
             "clarifies_assumptions", "testing_validation", "edge_cases_failures", "written_communication",
             "decisions_tradeoffs", "tradeoffs_operability"}
-NOT_SCORED_TYPES = {"logistics", "closing"}   # no puntúan como competencia
+NOT_SCORED_TYPES = {"logistics", "closing"}   # don't score as a competency
 
 CRITERIA_LABELS = {
     "star_situation": "Situación", "star_task": "Tarea", "star_action": "Acción", "star_result": "Resultado",
@@ -64,7 +64,7 @@ ANCHORS = """| 1 Insuficiente | No responde al objetivo, contiene errores centra
 | 4 Fuerte | Explica decisiones, trade-offs, validación y límites con claridad |
 | 5 Excelente | Rigurosa, específica y bien priorizada; anticipa fallos relevantes sin sobreingeniería |"""
 
-FALLBACK_RUBRIC = {  # ⚠ provisoria: solo si falta knowledge/<rúbrica>/<idioma>/rubrica.md
+FALLBACK_RUBRIC = {  # ⚠ provisional: only when knowledge/<rubric>/<language>/rubrica.md is missing
     "star": "STAR: situation, task, action (first person), result (quantified), decisions_tradeoffs, learning, "
             "relevance, conciseness, job_alignment, cv_consistency.",
     "screening": "Recruiter screening: clear structure, concise, motivation and company knowledge, experience aligned "
@@ -86,23 +86,23 @@ def criteria_for(interview_type: str, language: str) -> list[str]:
     return ids
 
 
-# Esquema SIN restricciones numéricas ni enums anidados: la gramática estricta del proveedor tiene un tope de tamaño
-# ("compiled grammar is too large"). Rangos y valores se validan en normalize().
+# Schema WITHOUT numeric constraints or nested enums: the provider's strict grammar has a size cap
+# ("compiled grammar is too large"). Ranges and values are validated in normalize().
 class Criterion(BaseModel):
     id: str
-    applicable: bool      # false = no aplica a esta pregunta (no puntúa ni promedia)
+    applicable: bool      # false = doesn't apply to this question (neither scored nor averaged)
     score: int            # 1–5
     evidence_quote: str
     justification: str
-    missing: str          # qué faltó para llegar al 5 (una frase; "" si ya es 5)
-    ideal: str            # la versión 5/5 de ESTA parte, lista para decir
+    missing: str          # what was missing to reach a 5 (one sentence; "" if already 5)
+    ideal: str            # the 5/5 version of THIS part, ready to say
 
 
 class Annotation(BaseModel):
-    quote: str            # fragmento LITERAL de la transcripción (ancla del comentario)
+    quote: str            # LITERAL fragment of the transcript (the comment's anchor)
     kind: Literal["bien", "mejorar"]
     comment: str
-    fix: str              # cómo decirlo mejor ("" si es "bien")
+    fix: str              # how to say it better ("" when kind is "bien")
 
 
 class Improvement(BaseModel):
@@ -187,7 +187,7 @@ def build_messages(*, interview_type, language, question, question_guidance, tra
             retrieved = retrieve(f"{question}\n{question_guidance}", t, language, k=int(env("RAG_TOP_K", "6")))
             if not retrieved and language != "en":
                 retrieved = retrieve(f"{question}\n{question_guidance}", t, "en", k=int(env("RAG_TOP_K", "6")))
-        except Exception:  # noqa: BLE001  (sin RAG la evaluación sigue, con la rúbrica)
+        except Exception:  # noqa: BLE001  (without RAG the evaluation proceeds, rubric only)
             retrieved = []
     ids = criteria_for(interview_type, language)
     optional = [i for i in ids if i in OPTIONAL]
@@ -320,7 +320,7 @@ def normalize(ev: Evaluation, expected: list[str]) -> Evaluation:
     if missing:
         raise ValueError(f"faltan criterios {missing}; recibidos {list(by_id)}")
     ev.criteria = [by_id[i] for i in expected]
-    for c in ev.criteria:   # solo los opcionales pueden quedar afuera
+    for c in ev.criteria:   # only the optional ones may be left out
         c.score = _clamp(c.score)
         if c.id not in OPTIONAL:
             c.applicable = True
@@ -342,7 +342,7 @@ def normalize(ev: Evaluation, expected: list[str]) -> Evaluation:
 
 
 def scored_criteria(evaluation: dict) -> list[dict]:
-    """Criterios que cuentan para promedios (los no aplicables quedan afuera)."""
+    """Criteria that count toward averages (non-applicable ones are excluded)."""
     return [c for c in evaluation.get("criteria", []) if c.get("applicable", True)]
 
 
@@ -351,7 +351,7 @@ def evaluate(**kwargs) -> dict:
     expected = criteria_for(kwargs["interview_type"], kwargs["language"])
     meta = kwargs.get("question_meta") or {}
     errors = []
-    for attempt in range(2):  # un reintento si el esquema no valida
+    for attempt in range(2):  # one retry if the schema doesn't validate
         t0 = time.perf_counter()
         try:
             ev, cost = structured(env("LLM_EVALUATOR_MODEL"), messages, Evaluation,
@@ -363,7 +363,7 @@ def evaluate(**kwargs) -> dict:
             out["competency"]["id"] = meta.get("primary_competency") or out["competency"]["id"]
             out["competency"]["label"] = meta.get("competency_label") or out["competency"]["label"]
             out["competency"]["scored"] = kwargs["interview_type"] not in NOT_SCORED_TYPES
-            # en un ejercicio la evidencia es la tarea misma (ejecución en vivo), no la experiencia previa declarada
+            # in an exercise the evidence is the task itself (live execution), not previously claimed experience
             out["competency"]["evidence_source"] = "ejercicio" if kwargs["interview_type"] == "exercise" else "respuesta"
             return {"ok": True, "evaluation": out, "latency_s": round(time.perf_counter() - t0, 2), "cost_usd": cost,
                     "retrieved_chunks": chunk_ids, "rubric_sourced": sourced, "model": env("LLM_EVALUATOR_MODEL"),

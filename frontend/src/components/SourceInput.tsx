@@ -15,8 +15,8 @@ const LABEL = { cv: "tu CV", job: "el puesto" }
 export interface DocValue { markdown: string; source: Source }
 
 /**
- * Carga de un documento (CV o puesto) desde archivo, texto o link → Markdown legible, revisable y editable.
- * Admite PDF, DOCX, DOC, RTF, ODT, TXT, MD, HTML e imágenes (CV escaneado).
+ * Loads a document (CV or job) from a file, text or link → readable, reviewable, editable Markdown.
+ * Supports PDF, DOCX, DOC, RTF, ODT, TXT, MD, HTML and images (scanned CV).
  */
 export function SourceInput({ kind, value, onChange }: { kind: "cv" | "job"; value: DocValue | null; onChange: (v: DocValue | null) => void }) {
   const [busy, setBusy] = useState(false)
@@ -88,7 +88,7 @@ export function SourceInput({ kind, value, onChange }: { kind: "cv" | "job"; val
   )
 }
 
-/** Vista | Editar de un documento en Markdown. */
+/** View | Edit of a Markdown document. */
 export function MarkdownEditor({ value, source, warnings = [], onChange, onReset, resetLabel = "Cargar otro" }: {
   value: string; source?: Source; warnings?: string[]; onChange: (md: string) => void; onReset?: () => void; resetLabel?: string
 }) {

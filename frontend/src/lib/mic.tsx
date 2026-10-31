@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { type MicError, openMic } from "./audio"
 
-// El permiso se pide una vez (con pantalla previa en el panel). El micrófono se ABRE solo mientras grabás y se
-// libera al terminar: dejarlo abierto pone al sistema en "modo llamada" y degrada lo que suena por los parlantes.
+// Permission is asked once (with a pre-permission screen in the panel). The mic OPENS only while you record and is
+// released afterwards: keeping it open puts the system in "call mode" and degrades what plays through the speakers.
 interface MicState {
   stream: MediaStream | null
   error: MicError | null

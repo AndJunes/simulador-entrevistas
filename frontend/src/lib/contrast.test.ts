@@ -1,6 +1,6 @@
 /**
- * Contraste de los tokens de color (WCAG 2.2 · 1.4.3 texto ≥4.5:1 · 1.4.11 componentes/gráficos ≥3:1).
- * Lee index.css: si alguien cambia un color y rompe el contraste, el test falla.
+ * Color-token contrast (WCAG 2.2 · 1.4.3 text ≥4.5:1 · 1.4.11 components/graphics ≥3:1).
+ * Reads index.css: if someone changes a color and breaks contrast, the test fails.
  */
 import { readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
@@ -8,7 +8,7 @@ import { contrast, readTokens } from "./contrast"
 
 const css = readFileSync(new URL("../index.css", import.meta.url), "utf8")
 
-// [primer plano, fondo, mínimo]
+// [foreground, background, minimum]
 const TEXT: [string, string, number][] = [
   ["foreground", "background", 4.5], ["foreground", "card", 4.5], ["muted-foreground", "background", 4.5],
   ["muted-foreground", "card", 4.5], ["muted-foreground", "muted", 4.5], ["primary", "card", 4.5], ["primary", "background", 4.5],

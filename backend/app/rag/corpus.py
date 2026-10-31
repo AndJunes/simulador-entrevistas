@@ -1,5 +1,5 @@
-"""Lectura del corpus knowledge/**/*.md: frontmatter + chunks por encabezado `##`.
-Convención de la pm-knowledge-base: cada chunk lleva título y metadata antepuestos."""
+"""Reads the knowledge/**/*.md corpus: frontmatter + chunks per `##` heading.
+pm-knowledge-base convention: each chunk is prefixed with title and metadata."""
 import hashlib
 import re
 from pathlib import Path
@@ -47,7 +47,7 @@ def chunks_of(path: Path, meta: dict, body: str) -> list[dict]:
 
 
 def rubric_text(interview_type: str, language: str) -> str | None:
-    """La rúbrica va COMPLETA al prompt (no se recupera por similitud): es obligatoria."""
+    """The rubric goes into the prompt IN FULL (not retrieved by similarity): it's mandatory."""
     path = KNOWLEDGE / interview_type / language / "rubrica.md"
     if not path.exists():
         return None

@@ -1,4 +1,4 @@
-"""Configuración central. Lee el .env de la raíz del proyecto. Nunca loguea secretos."""
+"""Central configuration. Reads the .env at the project root. Never logs secrets."""
 import os
 from functools import lru_cache
 from pathlib import Path
@@ -18,11 +18,11 @@ for _d in (TTS_CACHE, TMP):
     _d.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(ROOT / ".env")
-os.environ.setdefault("LANGSMITH_TRACING", "false")   # telemetría apagada (langsmith viene con LangGraph)
+os.environ.setdefault("LANGSMITH_TRACING", "false")   # telemetry off (langsmith ships with LangGraph)
 
 
 def env(name: str, default: str | None = None) -> str:
-    """Valor de configuración sin el comentario inline. Falla claro si falta y no hay default."""
+    """Config value with any inline comment stripped. Fails clearly if missing and no default."""
     value = os.getenv(name, default)
     if value is None or str(value).strip() == "":
         if default is not None:

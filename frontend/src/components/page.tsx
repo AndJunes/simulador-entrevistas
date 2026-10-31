@@ -3,15 +3,15 @@ import { Link } from "react-router"
 import { cn } from "@/lib/utils"
 
 /**
- * Piezas de layout compartidas: un solo sistema, sobre los tokens de index.css.
- * Cada pieza tiene una responsabilidad; nada de booleanos que cambien el layout entero.
+ * Shared layout pieces: one system, built on the index.css tokens.
+ * Each piece has one responsibility; no booleans that reshape the whole layout.
  */
 
 export function Eyebrow({ children, className }: { children: React.ReactNode; className?: string }) {
   return <p className={cn("text-caption font-extrabold uppercase tracking-[0.14em] text-teal-dark", className)}>{children}</p>
 }
 
-/** Encabezado de página: eyebrow + h1 + una frase + acción secundaria a la derecha. */
+/** Page header: eyebrow + h1 + one sentence + secondary action on the right. */
 export function PageHeader({ eyebrow, title, intro, action }: { eyebrow: string; title: React.ReactNode; intro?: React.ReactNode; action?: React.ReactNode }) {
   return (
     <header className="mb-[26px] flex flex-col items-start justify-between gap-x-6 gap-y-4 sm:flex-row sm:items-end">
@@ -29,7 +29,7 @@ export function Panel({ className, children, ...rest }: React.ComponentProps<"se
   return <section className={cn("min-w-0 rounded-card border bg-card p-4 sm:p-5", className)} {...rest}>{children}</section>
 }
 
-/** Encabezado de sección: título que dice el propósito + una línea + enlace opcional. */
+/** Section header: title stating the purpose + one line + optional link. */
 export function SectionHead({ title, sub, id, eyebrow, to, link, className }: {
   title: string; sub?: string; id?: string; eyebrow?: string; to?: string; link?: string; className?: string
 }) {
@@ -45,7 +45,7 @@ export function SectionHead({ title, sub, id, eyebrow, to, link, className }: {
   )
 }
 
-/** Tarjeta de métrica: icono 38px + número + etiqueta + explicación breve. */
+/** Metric card: 38px icon + number + label + short explanation. */
 export function MetricCard({ icon, tone = "mint", value, label, desc, to }: {
   icon: React.ReactNode; tone?: "mint" | "info" | "warn"; value: React.ReactNode; label: string; desc: string; to?: string
 }) {
@@ -70,7 +70,7 @@ const COV = {
   gap: { label: "Sin evidencia", short: "Sin evidencia", icon: CircleIcon, cls: "bg-none-bg text-none" },
 } as const
 
-/** Estado de evidencia: icono + texto + color, nunca solo color (WCAG 1.4.1). Describe el CV, no a la persona. */
+/** Evidence status: icon + text + color, never color alone (WCAG 1.4.1). Describes the CV, not the person. */
 export function StatusBadge({ coverage, short, className }: { coverage?: "strong" | "partial" | "gap"; short?: boolean; className?: string }) {
   if (!coverage) return null
   const c = COV[coverage]
@@ -83,12 +83,12 @@ export function StatusBadge({ coverage, short, className }: { coverage?: "strong
 
 const TAG = { mint: "bg-mint text-teal-dark", warn: "bg-warn-bg text-warn", none: "bg-none-bg text-none", info: "bg-info-bg text-info", soft: "bg-soft text-muted-foreground" } as const
 
-/** Etiqueta chica para metadatos: tipo de experiencia, estado de sesión, "Sugerido". */
+/** Small metadata tag: experience kind, session status, "Sugerido". */
 export function Tag({ tone = "mint", children, className }: { tone?: keyof typeof TAG; children: React.ReactNode; className?: string }) {
   return <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-[7px] px-2 py-1 text-caption font-extrabold", TAG[tone], className)}>{children}</span>
 }
 
-/** Icono lineal en contenedor de 38–40 px. */
+/** Line icon in a 38–40 px container. */
 export function IconBox({ children, className }: { children: React.ReactNode; className?: string }) {
   return <span aria-hidden className={cn("grid size-[38px] shrink-0 place-items-center rounded-xl bg-soft text-teal-dark [&_svg]:size-[18px]", className)}>{children}</span>
 }

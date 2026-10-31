@@ -1,4 +1,4 @@
-"""API del simulador. Corre nativa en macOS (Whisper/MLX usa la GPU Metal). Solo escucha en localhost."""
+"""Simulator API. Runs natively on macOS (Whisper/MLX uses the Metal GPU). Listens on localhost only."""
 import asyncio
 import json
 import logging
@@ -54,7 +54,7 @@ app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in env("CORS_O
                    allow_methods=["*"], allow_headers=["*"])
 
 
-# ----------------------------------------------------------------------------- utilidades
+# ----------------------------------------------------------------------------- helpers
 
 async def _save_upload(f: UploadFile) -> str:
     ext = (f.filename or "a.webm").rsplit(".", 1)[-1][:5]
@@ -88,14 +88,14 @@ def _turn_dict(t: Turn) -> dict:
             "extra": t.extra or {}}
 
 
-# ----------------------------------------------------------------------------- contexto
+# ----------------------------------------------------------------------------- context
 
 @app.get("/api/health")
 def health():
     return {"ok": True, **STATUS}
 
 
-# ----------------------------------------------------------------------------- postulaciones
+# ----------------------------------------------------------------------------- applications
 
 def _app_summary(a: Application, counts: dict | None = None) -> dict:
     return {"id": a.id, "title": a.title, "company": a.company, "status": a.status, "error": a.error,
@@ -122,7 +122,7 @@ def _get_app(s, app_id: str) -> Application:
 @app.post("/api/ingest")
 async def ingest_doc(kind: str = Form(...), file: UploadFile | None = File(None), text: str | None = Form(None),
                      url: str | None = Form(None)):
-    """Convierte un CV o un puesto (archivo, texto o link) a Markdown para revisarlo. No guarda nada."""
+    """Converts a CV or a job posting (file, text, or link) to Markdown for review. Saves nothing."""
     data = await file.read() if file is not None else None
     try:
         return await run_in_threadpool(ingest.ingest, kind, data=data, filename=file.filename if file else None,
@@ -222,13 +222,13 @@ def application_events(app_id: str):
 @app.delete("/api/applications/{app_id}")
 def delete_application(app_id: str):
     with db() as s:
-        s.delete(_get_app(s, app_id))   # borra en cascada sus sesiones y turnos
+        s.delete(_get_app(s, app_id))   # cascade-deletes its sessions and turns
     return {"deleted": True}
 
 
 @app.get("/api/applications/{app_id}/context")
 def get_app_context(app_id: str, view: str = "coach"):
-    """view=mock: SIN pistas, evidencia esperada ni política de repreguntas (se ocultan en el simulacro)."""
+    """view=mock: WITHOUT hints, expected evidence, or follow-up policy (hidden in the mock interview)."""
     try:
         ctx = context.for_app(app_id)
     except KeyError:
@@ -273,7 +273,7 @@ def get_audio(key: str):
     return FileResponse(path, media_type="audio/wav")
 
 
-# ----------------------------------------------------------------------------- práctica por pregunta
+# ----------------------------------------------------------------------------- per-question practice
 
 class NewSession(BaseModel):
     application_id: str
@@ -298,8 +298,8 @@ async def new_turn(audio: UploadFile | None = File(None), session_id: str = Form
                    lang: str = Form("es"), help_requested: bool = Form(False), attempt_of: str | None = Form(None),
                    followup_of: str | None = Form(None), followup_text: str | None = Form(None),
                    text: str | None = Form(None)):
-    """followup_of + followup_text: responder la repregunta de práctica que sugirió la devolución anterior.
-    text: respuesta ESCRITA en lugar de audio (alternativa a la voz)."""
+    """followup_of + followup_text: answer the practice follow-up suggested by the previous feedback.
+    text: WRITTEN answer instead of audio (alternative to voice)."""
     if audio is None and not (text or "").strip():
         raise HTTPException(400, "falta el audio o el texto de la respuesta")
     if text is not None and len(text) > 8000:
@@ -342,7 +342,7 @@ def cancel_turn(tid: str):
 
 
 class Rating(BaseModel):
-    rating: int | None = None     # 1 me sirvió · -1 no me sirvió · None borra
+    rating: int | None = None     # 1 helpful · -1 not helpful · None clears it
 
 
 @app.post("/api/turns/{tid}/rating")
@@ -382,7 +382,7 @@ def get_turn(tid: str):
         return _turn_dict(t)
 
 
-# ----------------------------------------------------------------------------- simulacro / videollamada
+# ----------------------------------------------------------------------------- mock interview / video call
 
 @app.post("/api/mock/sessions")
 async def new_mock(req: NewSession):
@@ -418,7 +418,7 @@ def mock_report_events(sid: str):
     return _sse(f"report:{sid}")
 
 
-# ----------------------------------------------------------------------------- ejercicio (work sample)
+# ----------------------------------------------------------------------------- exercise (work sample)
 
 class NewExercise(BaseModel):
     application_id: str
@@ -465,14 +465,14 @@ def exercise_submit(sid: str, req: SubmitReq):
         raise HTTPException(422, str(e))
 
 
-# ----------------------------------------------------------------------------- calidad del sistema
+# ----------------------------------------------------------------------------- system quality
 
 @app.get("/api/quality")
 def get_quality(application_id: str | None = None):
     return quality.summary(application_id)
 
 
-# ----------------------------------------------------------------------------- historial y progreso
+# ----------------------------------------------------------------------------- history and progress
 
 @app.get("/api/sessions")
 def list_sessions(application_id: str | None = None, mode: str | None = None):
@@ -500,7 +500,7 @@ def get_session(sid: str):
 
 @app.get("/api/progress")
 def progress(application_id: str | None = None):
-    """Evolución por día: métricas de forma y promedio por criterio. Sin nota global."""
+    """Per-day evolution: delivery metrics and per-criterion averages. No overall grade."""
     with db() as s:
         q = select(Turn).join(Session, Session.id == Turn.session_id).where(Turn.kind == "evaluation", Turn.status == "done")
         if application_id:

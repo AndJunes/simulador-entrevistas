@@ -18,7 +18,7 @@ const TABS = [
   { v: "ejercicios", label: "Ejercicios" },
 ]
 
-/** Progreso y resultados: qué mejorar, con datos reales. Cada pestaña separa un tipo de práctica. */
+/** Progress and results: what to improve, with real data. Each tab separates one practice type. */
 export default function Results() {
   const appId = useAppId()
   const [params, setParams] = useSearchParams()

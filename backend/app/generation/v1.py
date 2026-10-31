@@ -1,5 +1,5 @@
-"""Generador v1 (una sola llamada): se conserva SOLO como línea de base para el A/B de `evals/run_generator.py`.
-La app usa el pipeline v2 (`app/generation/pipeline.py`)."""
+"""Generator v1 (single call): kept ONLY as a baseline for the `evals/run_generator.py` A/B.
+The app uses the v2 pipeline (`app/generation/pipeline.py`)."""
 from typing import Literal
 
 from pydantic import BaseModel

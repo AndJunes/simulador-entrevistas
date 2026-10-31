@@ -8,9 +8,9 @@ import { anchor, answerWords } from "@/lib/transcript"
 import { cn } from "@/lib/utils"
 import { AudioPlayer, ScoreDots } from "./common"
 
-// Datos de ejemplo {{…}}
+// Example data {{…}}
 
-/** El evaluador marca con {{…}} los detalles que NO están en tu CV (un número, una duración): se ven punteados. */
+/** The evaluator wraps in {{…}} the details NOT in your CV (a number, a duration): shown dotted. */
 export function ExampleText({ text, className }: { text: string; className?: string }) {
   const parts = text.split(/(\{\{[^}]+\}\})/g)
   return (
@@ -56,9 +56,9 @@ export function ExampleLegend() {
   )
 }
 
-// Anclaje de comentarios
+// Comment anchoring
 
-/** Agrupa palabras consecutivas con el mismo comentario en un solo tramo (resaltado continuo). */
+/** Groups consecutive words sharing a comment into one span (continuous highlight). */
 function groups(n: number, wordAnn: Map<number, number>): { ann: number | null; idx: number[] }[] {
   const out: { ann: number | null; idx: number[] }[] = []
   for (let i = 0; i < n; i++) {
@@ -70,7 +70,7 @@ function groups(n: number, wordAnn: Map<number, number>): { ann: number | null; 
   return out
 }
 
-// Chat de la llamada
+// Call chat
 
 type ChatStatus = "asking" | "recording" | "transcribing" | "evaluating" | "coaching" | null
 
@@ -103,7 +103,7 @@ function Typing({ label }: { label: string }) {
   )
 }
 
-/** Indicador en vivo de que estás hablando: barras que siguen el nivel de tu voz + texto (no solo color/movimiento). */
+/** Live indicator that you're speaking: bars following your voice level + text (not color/motion alone). */
 export function SpeakingIndicator({ level, speaking, elapsed }: { level: number; speaking: boolean; elapsed: number }) {
   const amp = Math.max(0, Math.min(1, (level + 60) / 45))
   const shape = [0.45, 0.8, 1, 0.7, 0.5]
@@ -141,13 +141,13 @@ export function CallChat({ question, transcript, metrics, evaluation, coaching, 
     () => (evaluation?.annotations ?? []).map((a) => ({ ...a, span: anchor(words, a.quote) })),
     [evaluation, words],
   )
-  // palabra → índice de comentario
+  // word → comment index
   const wordAnn = useMemo(() => {
     const m = new Map<number, number>()
     anns.forEach((a, n) => { if (a.span) for (let i = a.span[0]; i <= a.span[1]; i++) if (!m.has(i)) m.set(i, n) })
     return m
   }, [anns])
-  // Muletillas, pausas y baja confianza usan índices de las palabras con tiempo: sin tiempo no se marcan
+  // Fillers, pauses and low confidence use indices of timed words: without timing they aren't marked
   const fill = new Set(timed ? metrics?.filler_word_idx ?? [] : [])
   const low = new Set(timed ? metrics?.low_confidence_idx ?? [] : [])
   const pauses = timed ? [...(metrics?.long_pauses ?? [])] : []
@@ -222,7 +222,7 @@ export function CallChat({ question, transcript, metrics, evaluation, coaching, 
         </Bubble>
       )}
 
-      {/* Hilo de comentarios anclados (como en un doc): legible sin hover */}
+      {/* Thread of anchored comments (like in a doc): readable without hover */}
       {anns.length > 0 && (
         <ol className="flex flex-col gap-2 pl-4" aria-label="Comentarios sobre tu respuesta">
           {anns.map((a, n) => (
@@ -291,7 +291,7 @@ export function CallChat({ question, transcript, metrics, evaluation, coaching, 
   )
 }
 
-// Cómo llegar al 5
+// How to reach a 5
 
 export function ToFive({ criteria, lang }: { criteria: Criterion[]; lang: Lang }) {
   const na = criteria.filter((c) => c.applicable === false)
@@ -376,9 +376,9 @@ export function MetricsStrip({ m }: { m: Metrics }) {
   )
 }
 
-// Evaluación explicable
+// Explainable evaluation
 
-/** Qué demostraste y qué no se sabe todavía, con la repregunta que te haría un entrevistador real. */
+/** What you demonstrated and what's still unknown, with the follow-up a real interviewer would ask. */
 export function CompetencyCard({ ev, onFollowup }: { ev: EvaluationBody; onFollowup?: (text: string) => void }) {
   const c = ev.competency
   if (!c && !ev.provisional_assessment) return null
@@ -420,7 +420,7 @@ const CHECK = {
   no_demostrado: { icon: CircleIcon, label: "No demostrado", cls: "text-muted-foreground" },
 } as const
 
-/** Lo demostrado, lo inferido y lo que falta; y cada experiencia que mencionaste, por tipo (profesional, proyecto…). */
+/** What's demonstrated, inferred and missing; and each experience you mentioned, by kind (professional, project…). */
 export function EvidencePanel({ ev }: { ev: EvaluationBody }) {
   const has = ev.evidence_check?.length || ev.experience_claims?.length || ev.facts?.length || ev.not_demonstrated?.length
   if (!has) return null
@@ -463,7 +463,7 @@ export function EvidencePanel({ ev }: { ev: EvaluationBody }) {
   )
 }
 
-/** ¿Te sirvió esta devolución? (métrica de producto). */
+/** Was this feedback helpful? (product metric). */
 export function FeedbackRating({ turnId, initial }: { turnId: string | null; initial?: 1 | -1 | null }) {
   const [v, setV] = useState<1 | -1 | null>(initial ?? null)
   if (!turnId) return null
@@ -481,7 +481,7 @@ export function FeedbackRating({ turnId, initial }: { turnId: string | null; ini
   )
 }
 
-/** Modo coach: pistas que aparecen de a una, solo si las pedís (revelar pistas gradualmente). */
+/** Coach mode: hints revealed one at a time, only when you ask (progressive disclosure). */
 export function HintsPanel({ q }: { q: Question }) {
   const steps: { title: string; body?: string; list?: string[] }[] = [
     { title: "Qué evalúa", body: q.objective || q.relevance || "" },

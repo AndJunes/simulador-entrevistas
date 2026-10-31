@@ -1,4 +1,4 @@
-"""Pipeline de generación v2: esquema, blueprint, validador y selección (sin red: todo determinístico)."""
+"""Generation pipeline v2: schema, blueprint, validator and selection (no network: all deterministic)."""
 from app.generation import blueprint as bp
 from app.generation import validator as val
 from app.generation.pipeline import select
@@ -16,7 +16,7 @@ def q(**kw):
     return {**base, **kw}
 
 
-# ----------------------------------------------------------------------------- esquema
+# ----------------------------------------------------------------------------- schema
 
 def test_normalize_legacy_question_gets_defaults():
     n = normalize_question({"id": "Q1", "type": "screening", "text_en": "Tell me about yourself", "pitch": True,
@@ -49,7 +49,7 @@ def test_public_view_hides_private_fields():
     assert "secreto" not in str(pub) and "pista" not in str(pub) and pub["text_en"]
 
 
-# ----------------------------------------------------------------------------- validador
+# ----------------------------------------------------------------------------- validator
 
 def test_premise_asyncio_on_threads_project_is_flagged():
     bad = q(format="behavioral", text_en="How did you solve the asyncio race condition in KvLite?",
@@ -145,7 +145,7 @@ def test_sync_rebuilds_stages_from_bank():
     assert [(b["stage"], b["question_ids"]) for b in out] == [("recruiter_screen", ["Q2"]), ("technical_screen", ["Q1"])]
 
 
-# ----------------------------------------------------------------------------- selección
+# ----------------------------------------------------------------------------- selection
 
 def test_select_prefers_clean_candidate_and_adopts_rewrites():
     c1 = q(slot_id="TEC1", text_en="How did you solve the asyncio race condition in KvLite?", candidate_evidence_ids=["E5"])

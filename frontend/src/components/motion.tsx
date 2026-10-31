@@ -3,9 +3,9 @@ import { domAnimation, LazyMotion, m, MotionConfig } from "motion/react"
 import { TrendingUpIcon } from "lucide-react"
 
 /**
- * Movimiento con propósito. Motion con LazyMotion+m (carga mínima) y
- * reducedMotion="user": si el sistema pide menos movimiento, se anulan transform/layout y queda solo la opacidad.
- * Tokens: base 240 ms ease-out para entrar (NN/g 100–500 ms; Material/Carbon).
+ * Purposeful motion. Motion via LazyMotion+m (minimal load) and
+ * reducedMotion="user": if the system asks for less motion, transform/layout are dropped and only opacity remains.
+ * Tokens: 240 ms ease-out base for entering (NN/g 100–500 ms; Material/Carbon).
  */
 export function MotionProvider({ children }: { children: React.ReactNode }) {
   return (
@@ -15,7 +15,7 @@ export function MotionProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-/** Momento firma 1: cada parte de la devolución aparece cuando su etapa termina (opacidad + 8 px). */
+/** Signature moment 1: each piece of the feedback appears when its stage finishes (opacity + 8 px). */
 export function Reveal({ children, delay = 0, className }: { children: React.ReactNode; delay?: number; className?: string }) {
   return (
     <m.div className={className} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}>
@@ -25,8 +25,8 @@ export function Reveal({ children, delay = 0, className }: { children: React.Rea
 }
 
 /**
- * Momento firma 3: una mejora REAL de competencia entre intentos (Sailer et al. 2017: feedback de rendimiento
- * informativo apoya la competencia). Sin confeti ni count-up: el texto dice qué mejoró y cuánto.
+ * Signature moment 3: a REAL competency improvement between attempts (Sailer et al. 2017: informative
+ * performance feedback supports competence). No confetti or count-up: the text says what improved and by how much.
  */
 export function ImprovementNote({ label, from, to }: { label: string; from: number; to: number }) {
   if (!(to > from)) return null

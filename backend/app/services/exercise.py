@@ -1,9 +1,9 @@
-"""Modo ejercicio (work sample): una tarea escrita parecida al trabajo real.
+"""Exercise mode (work sample): a written task resembling the real job.
 
-- La consigna y los criterios se ven desde el principio (OPM: work samples con criterios claros).
-- Preguntas aclaratorias: un LLM responde como entrevistador SOLO con los datos de referencia del ejercicio; si algo
-  no está especificado, lo dice y pide anotar el supuesto. Las aclaraciones se guardan y se evalúan.
-- El código NUNCA se ejecuta: se evalúa leyéndolo con la rúbrica de ejercicio.
+- The brief and the criteria are visible from the start (OPM: work samples with clear criteria).
+- Clarifying questions: an LLM answers as the interviewer using ONLY the exercise's reference facts; if something
+  isn't specified, it says so and asks to note the assumption. Clarifications are stored and evaluated.
+- Code is NEVER executed: it's evaluated by reading it against the exercise rubric.
 """
 import logging
 import threading
@@ -26,7 +26,7 @@ MAX_CLARIFICATIONS = 8
 
 class Clarification(BaseModel):
     answer: str
-    specified: bool      # false = no está en los datos de referencia: la persona tiene que asumir y anotarlo
+    specified: bool      # false = not in the reference facts: the person must assume and note it
 
 
 CLARIFY_SYSTEM = """You are the interviewer running a short written work-sample exercise. The candidate asks a

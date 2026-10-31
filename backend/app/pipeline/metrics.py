@@ -1,9 +1,9 @@
-"""Métricas de forma deterministas.
+"""Deterministic delivery metrics.
 
-- Pausas: por VAD sobre el audio, NO por huecos entre palabras de Whisper (Whisper absorbe silencios).
-- Inicio: el tramo de voz que coincide con la primera palabra (ignora respiraciones/ruidos previos).
-- Muletillas ambiguas ("like", "bueno"): solo cuentan en contexto de relleno.
-- Rangos objetivo: backend/config/form_targets.yaml (con fuentes) si existe; si no, valores provisorios.
+- Pauses: via VAD on the audio, NOT gaps between Whisper words (Whisper absorbs silences).
+- Onset: the speech segment matching the first word (ignores prior breaths/noises).
+- Ambiguous fillers ("like", "bueno"): only counted in filler context.
+- Target ranges: backend/config/form_targets.yaml (with sources) if present; otherwise provisional values.
 """
 import re
 from functools import lru_cache
@@ -12,16 +12,16 @@ import yaml
 
 from app.core.config import CONFIG_DIR, env
 
-# Dos categorías (corpus: knowledge/SOURCES.md K28–K32):
-# - pausas llenas: inequívocas, se cuentan siempre;
-# - marcadores discursivos: legítimos casi siempre; solo se señalan si se REPITEN (sobreuso) y con reglas de contexto.
+# Two categories (corpus: knowledge/SOURCES.md K28–K32):
+# - filled pauses: unambiguous, always counted;
+# - discourse markers: almost always legitimate; flagged only when REPEATED (overuse) and under context rules.
 DEFAULT_FILLERS = {
-    "en": (["um", "uh", "erm", "er", "hmm", "mm", "eh", "em"],     # L2: se cuelan las del español (K28)
+    "en": (["um", "uh", "erm", "er", "hmm", "mm", "eh", "em"],     # L2: Spanish ones slip in (K28)
            ["like", "you know", "i mean", "so", "basically", "actually", "kind of", "sort of"]),
     "es": (["eh", "em", "ehm", "mmm", "mm"],
            ["este", "o sea", "bueno", "pues", "entonces", "digamos", "tipo", "como que"]),
 }
-MARKER_OVERUSE_MIN = 3   # ⚠ heurística: un marcador cuenta como muletilla si aparece 3+ veces en una respuesta
+MARKER_OVERUSE_MIN = 3   # ⚠ heuristic: a marker counts as a filler if it appears 3+ times in one answer
 NOT_FILLER_BEFORE = {
     "like": {"i", "you", "we", "they", "would", "i'd", "really", "don't", "didn't", "also", "to", "just", "would've",
              "looks", "look", "feel", "feels", "things", "something", "anything"},
@@ -30,21 +30,21 @@ NOT_FILLER_BEFORE = {
 }
 NOT_FILLER_AFTER = {"like": {"to", "this", "that", "it", "them"}, "tipo": {"de"}}
 
-DEFAULT_DURATION = {"screening": (45, 90), "star": (60, 90), "closing": (20, 90)}   # ⚠ provisorio (notas de preparación de una postulación real)
+DEFAULT_DURATION = {"screening": (45, 90), "star": (60, 90), "closing": (20, 90)}   # ⚠ provisional (prep notes from a real application)
 
 
 def _clean_tokens(items) -> list[str]:
     out = []
     for i in items:
         t = str(i["token"] if isinstance(i, dict) else i).lower().strip()
-        if t and t == _norm_phrase(t):      # descarta "¿no?" y similares: al normalizar serían "no" (falsos positivos)
+        if t and t == _norm_phrase(t):      # drops "¿no?" and the like: normalized they'd become "no" (false positives)
             out.append(t)
     return sorted(set(out), key=lambda x: -len(x))
 
 
 @lru_cache
 def fillers(lang: str) -> tuple[list[str], list[str]]:
-    """(pausas llenas, marcadores discursivos). Desde backend/config/fillers_<lang>.yaml si existe."""
+    """(filled pauses, discourse markers). From backend/config/fillers_<lang>.yaml if present."""
     path = CONFIG_DIR / f"fillers_{lang}.yaml"
     if path.exists():
         try:
@@ -53,7 +53,7 @@ def fillers(lang: str) -> tuple[list[str], list[str]]:
             markers = [m for m in _clean_tokens(d.get("discourse_markers", [])) if m not in filled]
             if filled:
                 return filled, markers
-        except Exception:  # noqa: BLE001  (yaml mal formado → defaults, no rompe la práctica)
+        except Exception:  # noqa: BLE001  (malformed yaml → defaults, doesn't break practice)
             pass
     return DEFAULT_FILLERS[lang]
 
@@ -70,7 +70,7 @@ def targets() -> dict:
 
 
 def duration_target(qtype: str, question: dict | None = None) -> tuple[float, float, str | None]:
-    """Rango objetivo: el de la pregunta (lo define la postulación), si no form_targets.yaml, si no el default."""
+    """Target range: the question's own (set by the application), else form_targets.yaml, else the default."""
     if question and isinstance(question.get("duration"), list) and len(question["duration"]) == 2:
         lo, hi = question["duration"]
         src = "pregunta" if not question.get("pitch") else (targets().get("duration_s", {}).get("pitch") or {}).get("source")
@@ -130,7 +130,7 @@ def form_metrics(words: list[dict], vad: dict, lang: str, qtype: str, question: 
     found_markers = {f: n for f in markers if (n := count_filler(tokens, f))}
     overused = {f: n for f, n in found_markers.items() if n >= MARKER_OVERUSE_MIN}
     found = {**found_filled, **overused}
-    # posiciones de muletillas (índices de palabra) para resaltarlas en la transcripción
+    # filler positions (word indices) to highlight them in the transcript
     filler_idx = []
     single = {f for f in found if " " not in f}
     for i, w in enumerate(words):
@@ -168,10 +168,10 @@ def form_metrics(words: list[dict], vad: dict, lang: str, qtype: str, question: 
 
 
 def compare(prev: dict, cur: dict) -> dict:
-    """Antes/después al reintentar (Hattie & Timperley: feedback sobre el cambio)."""
+    """Before/after on retry (Hattie & Timperley: feedback on the change)."""
     keys = ("first_word_latency_s", "speech_duration_s", "wpm", "fillers_per_min")
     pm, cm = prev.get("metrics") or {}, cur.get("metrics") or {}
-    ok = lambda c: c.get("applicable", True)   # noqa: E731  (los no aplicables no se comparan)
+    ok = lambda c: c.get("applicable", True)   # noqa: E731  (non-applicable ones aren't compared)
     ps = {c["id"]: c["score"] for c in (prev.get("evaluation") or {}).get("criteria", []) if ok(c)}
     cs = {c["id"]: c["score"] for c in (cur.get("evaluation") or {}).get("criteria", []) if ok(c)}
     pc = ((prev.get("evaluation") or {}).get("competency") or {})

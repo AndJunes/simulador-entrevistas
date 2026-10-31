@@ -1,8 +1,8 @@
-"""TTS: Magpie TTS Multilingual (NVIDIA hosted, HTTP). Caché en disco por hash (voz+texto+procesamiento).
+"""TTS: Magpie TTS Multilingual (NVIDIA hosted, HTTP). On-disk cache keyed by hash (voice+text+processing).
 
-Post-proceso obligatorio: Magpie entrega audio con picos en 0 dBFS (sin margen), que satura
-los parlantes. Cada audio se normaliza con ffmpeg loudnorm a un volumen de voz moderado con techo de pico
-real de -3 dBTP, y se guarda mono 24 kHz (suficiente para voz, archivos más livianos).
+Mandatory post-processing: Magpie delivers audio peaking at 0 dBFS (no headroom), which clips
+the speakers. Each audio is normalized with ffmpeg loudnorm to a moderate speech level with a true-peak
+ceiling of -3 dBTP, and stored mono 24 kHz (enough for voice, lighter files).
 """
 import hashlib
 import subprocess
@@ -12,8 +12,8 @@ import httpx
 
 from app.core.config import TMP, TTS_CACHE, env
 
-POSTPROCESS = "loudnorm=I=-20:TP=-3:LRA=11"   # LUFS objetivo de voz, pico real máx -3 dB
-PROCESS_VERSION = "v2-loudnorm"                # cambia la clave de caché: los audios viejos (saturados) no se reusan
+POSTPROCESS = "loudnorm=I=-20:TP=-3:LRA=11"   # target speech LUFS, max true peak -3 dB
+PROCESS_VERSION = "v2-loudnorm"                # changes the cache key: old (clipped) audio isn't reused
 
 VOICES = {
     ("interviewer", "es"): "Magpie-Multilingual.ES-US.Isabela.Neutral",
@@ -42,7 +42,7 @@ def cache_path(key: str) -> Path:
 
 
 def synthesize(text: str, lang: str, role: str = "interviewer") -> str:
-    """Devuelve la clave de caché del WAV. Sintetiza solo si no existe."""
+    """Returns the WAV cache key. Synthesizes only if missing."""
     voice = VOICES[(role, lang)]
     key = cache_key(text, voice)
     path = cache_path(key)

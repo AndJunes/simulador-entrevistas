@@ -43,7 +43,7 @@ const blankQ = (stage: Stage): Question => ({
 const lines = (xs?: string[]) => (xs ?? []).join("\n")
 const toLines = (s: string) => s.split("\n")
 
-/** Banco de preguntas de la postulación: la IA lo arma por etapa y competencia, vos lo revisás y lo editás. */
+/** The application's question bank: generated per stage and competency; you review and edit it. */
 export default function QuestionsEditor() {
   const appId = useAppId()
   const qc = useQueryClient()
@@ -63,7 +63,7 @@ export default function QuestionsEditor() {
   const legacy = app.data.generator_version !== "v2"
 
   const update = (i: number, patch: Partial<Question>) => { setItems(items.map((q, j) => (j === i ? { ...q, ...patch } : q))); setDirty(true) }
-  const move = (i: number, d: -1 | 1) => {   // mueve dentro de la misma etapa
+  const move = (i: number, d: -1 | 1) => {   // moves within the same stage
     const j = d < 0 ? items.findLastIndex((x, k) => k < i && x.stage === items[i].stage) : items.findIndex((x, k) => k > i && x.stage === items[i].stage)
     if (j < 0) return
     const n = [...items]; [n[i], n[j]] = [n[j], n[i]]; setItems(n); setDirty(true)

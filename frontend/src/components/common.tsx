@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { applyVoicePrefs } from "@/lib/audio"
 import { cn } from "@/lib/utils"
 
-/** Región aria-live (WCAG 4.1.3): anuncia "Grabando", "Paso 2 de 3", "Feedback listo" a lectores de pantalla. */
+/** aria-live region (WCAG 4.1.3): announces "Grabando", "Paso 2 de 3", "Feedback listo" to screen readers. */
 export function LiveRegion({ message }: { message: string }) {
   return (
     <div aria-live="polite" role="status" className="sr-only">
@@ -13,7 +13,7 @@ export function LiveRegion({ message }: { message: string }) {
   )
 }
 
-/** Medidor de nivel: barra + texto (no depende solo del color). */
+/** Level meter: bar + text (doesn't rely on color alone). */
 export function LevelMeter({ db, className, label = "Nivel del micrófono" }: { db: number; className?: string; label?: string }) {
   const pct = Math.max(0, Math.min(100, ((db + 60) / 50) * 100))
   const status = db < -50 ? "muy bajo" : db < -40 ? "bajo" : db > -12 ? "muy alto" : "bien"
@@ -35,7 +35,7 @@ export function LevelMeter({ db, className, label = "Nivel del micrófono" }: { 
   )
 }
 
-/** 1–5 con puntos + texto "3 de 5" (no solo color). */
+/** 1–5 as dots + "3 de 5" text (not color alone). */
 export function ScoreDots({ score, size = "md" }: { score: number; size?: "sm" | "md" }) {
   const d = size === "sm" ? "size-2" : "size-2.5"
   return (
@@ -50,7 +50,7 @@ export function ScoreDots({ score, size = "md" }: { score: number; size?: "sm" |
 
 export interface Stage { key: string; label: string }
 
-/** Etapas con nombre (NN/g: >10 s necesita progreso explícito). */
+/** Named stages (NN/g: >10 s needs explicit progress). */
 export function StageProgress({ stages, current, done, etaS }: { stages: Stage[]; current: string; done: string[]; etaS?: number }) {
   const idx = stages.findIndex((s) => s.key === current)
   return (
@@ -82,7 +82,7 @@ export function StageProgress({ stages, current, done, etaS }: { stages: Stage[]
   )
 }
 
-/** Reproductor con pausa/repetir (WCAG 1.4.2: audio automático > 3 s debe poder detenerse). */
+/** Player with pause/replay (WCAG 1.4.2: auto-playing audio > 3 s must be stoppable). */
 export function AudioPlayer({ url, label, autoPlay = false, onEnded }: { url: string | null; label: string; autoPlay?: boolean; onEnded?: () => void }) {
   const ref = useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = useState(false)

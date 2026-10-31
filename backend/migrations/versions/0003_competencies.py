@@ -1,5 +1,5 @@
-"""Preguntas por competencia: análisis del puesto, evidencia del CV, blueprints por etapa,
-reporte de generación; en turnos, utilidad del feedback, repregunta redundante y datos extra (hilos, ejercicio).
+"""Per-competency questions: job analysis, CV evidence, per-stage blueprints,
+generation report; on turns, feedback usefulness, redundant follow-up and extra data (threads, exercise).
 
 Revision ID: 0003
 Revises: 0002
