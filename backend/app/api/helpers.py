@@ -13,11 +13,21 @@ from app.generation import blueprint as bp
 from app.generation.schema import normalize_question
 from app.services import events
 
+# A practice answer tops out at a few minutes of compressed audio; 25 MB is generous.
+MAX_AUDIO_BYTES = 25 * 1024 * 1024
+AUDIO_EXTENSIONS = {"webm", "wav", "m4a", "mp4", "ogg", "opus"}
+
 
 async def save_upload(f: UploadFile) -> str:
-    ext = (f.filename or "a.webm").rsplit(".", 1)[-1][:5]
+    """Persists an audio answer, enforcing size and extension — the name comes from the client."""
+    ext = (f.filename or "a.webm").rsplit(".", 1)[-1][:5].lower()
+    if ext not in AUDIO_EXTENSIONS:
+        raise HTTPException(400, f"Formato de audio .{ext} no soportado.")
+    data = await f.read(MAX_AUDIO_BYTES + 1)
+    if len(data) > MAX_AUDIO_BYTES:
+        raise HTTPException(413, "El audio supera los 25 MB.")
     path = TMP / f"up_{uuid.uuid4().hex}.{ext}"
-    path.write_bytes(await f.read())
+    path.write_bytes(data)
     return str(path)
 
 
