@@ -1,7 +1,6 @@
 """Applications: document ingestion, CRUD, generation and the per-application context."""
 
 import logging
-import threading
 from collections import defaultdict
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -11,6 +10,7 @@ from sqlalchemy import func, select
 from app import ingest
 from app.api.helpers import app_full, app_summary, get_app, sse
 from app.api.schemas import NewApplication, PatchApplication
+from app.core import jobs
 from app.core.status import STATUS
 from app.db.models import Application, Session, Turn
 from app.db.session import db
@@ -62,7 +62,7 @@ def create_application(req: NewApplication):
         s.flush()
         app_id = a.id
     events.open_channel(f"app:{app_id}")
-    threading.Thread(target=applications.generate, args=(app_id,), daemon=True).start()
+    jobs.submit(applications.generate, app_id)
     return {"id": app_id}
 
 
@@ -115,7 +115,7 @@ def regenerate_application(app_id: str):
     with db() as s:
         get_app(s, app_id).status = "generating"
     events.open_channel(f"app:{app_id}")
-    threading.Thread(target=applications.generate, args=(app_id,), daemon=True).start()
+    jobs.submit(applications.generate, app_id)
     return {"id": app_id}
 
 

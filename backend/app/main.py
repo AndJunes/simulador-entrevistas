@@ -7,12 +7,15 @@ import logging
 import threading
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api import applications, exercise, media, mock, practice, quality
+from app.core import jobs
 from app.core.config import env
 from app.core.status import STATUS
+from app.db.session import db
 from app.pipeline import stt
 from app.rag import store
 
@@ -21,6 +24,13 @@ log = logging.getLogger("api")
 
 
 def _bootstrap():
+    try:
+        with db() as s:
+            fixed = jobs.sweep_interrupted(s)
+        if fixed:
+            log.info("Marked %d jobs interrupted by the previous shutdown", fixed)
+    except Exception as e:  # noqa: BLE001
+        log.warning("Could not sweep interrupted jobs: %s", e)
     try:
         STATUS["rag"] = store.ingest()
     except Exception as e:  # noqa: BLE001
@@ -52,3 +62,8 @@ app.add_middleware(
 
 for router_module in (applications, media, practice, mock, exercise, quality):
     app.include_router(router_module.router)
+
+
+@app.exception_handler(jobs.BusyError)
+async def busy_handler(_: Request, exc: jobs.BusyError):
+    return JSONResponse(status_code=429, content={"detail": str(exc)})

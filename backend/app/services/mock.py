@@ -16,6 +16,7 @@ from langgraph.types import Command
 from pydantic import BaseModel
 from sqlalchemy import select
 
+from app.core import jobs
 from app.core.config import env
 from app.db.models import Session, Turn
 from app.db.session import db
@@ -74,7 +75,7 @@ def prewarm_tts(state: dict) -> None:
         for t, lang in texts:
             _say(t, lang)
 
-    threading.Thread(target=work, daemon=True).start()
+    jobs.submit(work)
 
 
 def start(app_id: str, mode: str, lang: str, stage: str, settings: dict) -> dict:
@@ -167,7 +168,7 @@ def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> di
     if p["type"] != "closing" and (nxt is None or nxt["pending"]["parent"] != p["parent"]):
         th = (state.get("threads") or {}).get(p["parent"])
         if th:
-            threading.Thread(target=_evaluate_thread_bg, args=(ctx.id, p["parent"], th, lang), daemon=True).start()
+            jobs.submit(_evaluate_thread_bg, ctx.id, p["parent"], th, lang)
     total = len(state["plan"])
     progress = {"index": min(state.get("idx", 0) + 1, total), "total": total}
     if nxt is None:  # finished: farewell
@@ -263,7 +264,7 @@ def flush_open_threads(sid: str) -> int:
         with _inflight_lock:
             busy = th["answers"][0]["turn_id"] in _inflight
         if not busy and app_id:
-            threading.Thread(target=_evaluate_thread_bg, args=(app_id, qid, th, lang), daemon=True).start()
+            jobs.submit(_evaluate_thread_bg, app_id, qid, th, lang)
             n += 1
     return n
 

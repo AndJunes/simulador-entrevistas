@@ -1,12 +1,11 @@
 """Mock interview and video-call mode."""
 
-import threading
-
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
 from app.api.helpers import save_upload, sse
 from app.api.schemas import NewSession
+from app.core import jobs
 from app.generation.schema import STAGES
 from app.pipeline import stt
 from app.services import events, mock
@@ -45,7 +44,7 @@ async def mock_answer(sid: str, audio: UploadFile | None = File(None), text: str
 def mock_finish(sid: str):
     cid = f"report:{sid}"
     events.open_channel(cid)
-    threading.Thread(target=mock.build_report, args=(sid,), daemon=True).start()
+    jobs.submit(mock.build_report, sid)
     return {"channel": cid}
 
 

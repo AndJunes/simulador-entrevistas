@@ -222,7 +222,9 @@ backend/.venv/bin/python evals/run_evaluator_consistency.py --n 5 --repeats 2   
 
 - Local voice transcription requires Apple Silicon; elsewhere the backend runs in text
   mode. There's no deployment of the backend.
-- Single-person local use: no auth, no rate limiting, no LLM spending cap.
+- Single-person local use: no auth and no LLM spending cap. Background work is
+  bounded (6 concurrent jobs, 429 beyond that) and a restart turns in-flight work
+  into retryable errors, but SSE progress streams live in memory.
 - Analysis quality depends on the LLM: evidence states describe the CV and may contain
   model inferences.
 - The NVIDIA endpoints used are trial endpoints (their terms log input/output).
