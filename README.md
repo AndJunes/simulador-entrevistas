@@ -1,199 +1,224 @@
-# Simulador de Entrevistas
+# Interview Simulator
 
-Simulador de entrevistas laborales con IA, de uso personal y local. Cargás **el aviso del puesto y tu CV**; la app
-analiza qué pide el puesto y qué evidencia muestra tu CV, arma un banco de preguntas por etapa y te entrevista por voz
-(o por escrito). Después te devuelve feedback sobre **qué decís** (competencias y criterios con escala anclada) y
-**cómo sonás** (latencia, ritmo, pausas, muletillas).
+*Read this in [Spanish / Español](README.es.md).*
+
+A personal, local-first AI interview simulator. You upload **a real job posting and your
+CV**; the app analyzes what the role asks for and what evidence your CV shows, builds a
+question bank per interview stage, and interviews you by voice (or in writing). Then it
+gives you feedback on **what you say** (competencies and criteria on anchored scales) and
+**how you sound** (latency, pace, pauses, filler words).
+
+> The product UI is in Spanish by design — it's a tool I built for my own job hunt. The
+> interview itself can be run in English or Spanish, and the RAG corpus ships in both
+> languages.
 
 ## Demo
 
-![Recorrido por la aplicación: nueva postulación, resumen, requisitos, práctica con devolución, simulacro e informe](docs/demo.gif)
+![Tour of the app: new application, summary, requirements, practice with feedback, mock interview and report](docs/demo.gif)
 
-*Recorrido acelerado con los datos ficticios de [`examples/`](examples/): crear una postulación, revisar requisitos y
-evidencia, practicar una pregunta respondiendo por escrito, hacer un simulacro y ver el informe.*
+*A sped-up tour using the fictional data in [`examples/`](examples/): create an
+application, review requirements and evidence, practice a question answering in writing,
+run a mock interview and read the report.*
 
-| Resumen | Requisitos |
+| Application summary | Requirements |
 |---|---|
-| ![Resumen de la postulación](docs/demo-resumen.png) | ![Requisitos con filtros y detalle](docs/demo-requisitos.png) |
-| **Devolución de una práctica** | **Informe del simulacro** |
-| ![Devolución por criterio con citas](docs/demo-devolucion.png) | ![Informe por competencia](docs/demo-informe.png) |
+| ![Application summary](docs/demo-summary.png) | ![Requirements with filters and detail](docs/demo-requirements.png) |
+| **Feedback on a practice answer** | **Mock interview report** |
+| ![Per-criterion feedback with quotes](docs/demo-feedback.png) | ![Report by competency](docs/demo-report.png) |
 
-## Problema que resuelve
+## The problem it solves
 
-Preparar una entrevista suele hacerse con preguntas genéricas y sin feedback. Este proyecto:
+Interview prep usually means generic question lists and zero feedback. This project:
 
-- deriva las preguntas del **puesto real** y de **tu CV**, diferenciando experiencia laboral de proyectos propios;
-- marca qué requisitos tienen evidencia fuerte, parcial o ninguna **en el CV** (no en la persona);
-- simula la entrevista por etapas (recruiter, técnica, conductual/cliente) con repreguntas solo cuando falta evidencia;
-- evalúa cada respuesta con citas de lo que dijiste, separando lo demostrado de lo que falta.
+- derives the questions from the **actual posting** and **your CV**, distinguishing work
+  experience from personal projects;
+- marks which requirements have strong, partial or no evidence **in the CV** (not in the
+  person);
+- simulates the interview by stage (recruiter screen, technical, behavioral/client) with
+  follow-ups only when evidence is missing;
+- scores every answer with quotes from what you said, separating what you demonstrated
+  from what's missing.
 
-## Funcionalidades
+## Features
 
-| Área | Qué hace |
+| Area | What it does |
 |---|---|
-| Postulaciones | Cada una con su CV, aviso, preguntas y resultados. Carga de PDF, Word, RTF, ODT, TXT, Markdown, HTML, imagen escaneada, texto o link; todo se convierte a Markdown editable |
-| Generación de preguntas | Pipeline en etapas: análisis del puesto → evidencia del CV → mapa de cobertura → blueprint por etapa → candidatas → validador (premisas no fundamentadas, preguntas dobles o inductivas, duplicados, cobertura de obligatorios) |
-| Práctica por pregunta | Modo coach con pistas que aparecen de a una, reintento con comparación y cambio de idioma |
-| Simulacro | Por etapa, con 0–3 repreguntas adaptativas (LangGraph) e informe final por competencia |
-| Videollamada | El simulacro con la pregunta solo hablada, controles de voz y reloj ocultable |
-| Ejercicio | Tarea escrita (work sample) con preguntas aclaratorias; el código **no se ejecuta**, se evalúa leyéndolo |
-| Progreso | Evolución por competencia y criterio contra tus propios intentos |
-| Calidad del sistema | Métricas del generador, el entrevistador y el evaluador, alimentadas por tus marcas |
+| Applications | Each one holds its CV, posting, questions and results. Upload PDF, Word, RTF, ODT, TXT, Markdown, HTML, a scanned image, raw text or a link; everything becomes editable Markdown |
+| Question generation | Staged pipeline: role analysis → CV evidence → coverage map → per-stage blueprint → candidates → validator (ungrounded premises, double-barreled or leading questions, duplicates, must-have coverage) |
+| Per-question practice | Coach mode with hints revealed one at a time, retry with comparison, and language switching |
+| Mock interview | Stage by stage, with 0–3 adaptive follow-ups (LangGraph) and a final report by competency |
+| Video-call mode | The mock with the question spoken only, voice controls and a hideable clock |
+| Written exercise | A work-sample task with clarifying questions; code is **never executed**, it's evaluated by reading |
+| Progress | Evolution per competency and criterion against your own attempts |
+| System quality | Metrics for the generator, the interviewer and the evaluator, fed by your ratings |
 
-Todas las respuestas se pueden dar **por voz o por escrito**.
+Every answer can be given **by voice or in writing**.
 
 ## Stack
 
-| Capa | Tecnologías |
+| Layer | Technologies |
 |---|---|
 | Frontend | React 19, TypeScript, Vite 8, Tailwind CSS v4, shadcn/ui (Radix), TanStack Query, React Router, Motion |
 | Backend | Python 3.12, FastAPI, SSE, LangGraph, SQLAlchemy 2 + Alembic |
-| Base de datos | Postgres 17 + pgvector 0.8.7 (Docker) |
-| IA | OpenRouter (Claude Sonnet 5.5 evalúa, Haiku 5.5 para tareas rápidas), NVIDIA (TTS Magpie, embeddings nemotron), Whisper large-v3-turbo **local** (MLX) |
-| Pruebas | pytest, Vitest, Playwright + axe-core |
+| Database | Postgres 17 + pgvector 0.8.7 (Docker) |
+| AI | OpenRouter (Claude Sonnet 5.5 evaluates, Haiku 5.5 for fast tasks), NVIDIA (Magpie TTS, nemotron embeddings), **local** Whisper large-v3-turbo (MLX) |
+| Tests | pytest, Vitest, Playwright + axe-core |
 
-## Arquitectura
+## Architecture
 
 ```
-navegador (React)
-   │  REST + SSE (progreso de generación, evaluación y reportes)
+browser (React)
+   │  REST + SSE (progress of generation, evaluation and reports)
    ▼
-FastAPI ── LangGraph (simulacro) ── servicios (prácticas, simulacro, ejercicio, calidad)
-   │            ├─ OpenRouter: análisis, preguntas, evaluación, repreguntas (solo texto)
-   │            ├─ NVIDIA: voz del entrevistador (TTS) y embeddings del corpus público
-   │            └─ Whisper local (MLX): transcripción; el audio no sale de la máquina
+FastAPI ── LangGraph (mock interview) ── services (practice, mock, exercise, quality)
+   │            ├─ OpenRouter: analysis, questions, evaluation, follow-ups (text only)
+   │            ├─ NVIDIA: interviewer voice (TTS) and embeddings of the public corpus
+   │            └─ local Whisper (MLX): transcription; audio never leaves the machine
    ▼
-Postgres + pgvector: postulaciones, sesiones, turnos, evaluaciones y RAG del corpus
+Postgres + pgvector: applications, sessions, turns, evaluations and the RAG corpus
 ```
 
 ```
 backend/
   app/
-    core/ db/             configuración, modelos SQLAlchemy y sesión
-    ingest/               conversión de documentos a Markdown y descarga de links (anti-SSRF)
-    generation/           pipeline de preguntas: análisis, evidencia, blueprint, validador
-    interview/            grafo del simulacro (LangGraph)
-    pipeline/             STT, TTS, métricas de voz, evaluador, coach, cliente LLM
-    rag/                  ingestión incremental y recuperación sobre pgvector
-    services/             casos de uso (práctica, simulacro, ejercicio, calidad)
-    main.py               endpoints HTTP
-  config/                 muletillas y rangos objetivo (con fuente)
+    core/ db/             configuration, SQLAlchemy models and session
+    ingest/               document-to-Markdown conversion and link download (anti-SSRF)
+    generation/           question pipeline: analysis, evidence, blueprint, validator
+    interview/            mock interview graph (LangGraph)
+    pipeline/             STT, TTS, voice metrics, evaluator, coach, LLM client
+    rag/                  incremental ingestion and retrieval over pgvector
+    services/             use cases (practice, mock, exercise, quality)
+    main.py               HTTP endpoints
+  config/                 filler words and target ranges (with sources)
   migrations/             Alembic
   tests/
 frontend/src/
-  pages/                  pantallas (postulaciones, espacio de la postulación, sesiones)
-  components/             componentes propios + ui/ (shadcn)
-  lib/                    cliente API, audio, tema, regla del "próximo paso"
-knowledge/                corpus del RAG (rúbricas, preguntas, errores) con 45 fuentes en SOURCES.md
-evals/                    evaluación del generador (A/B sobre 30 casos ficticios) y consistencia del evaluador
-examples/                 CV y avisos ficticios para probar el flujo completo
+  pages/                  screens (applications, application space, sessions)
+  components/             own components + ui/ (shadcn)
+  lib/                    API client, audio, theme, the "next step" rule
+knowledge/                RAG corpus (rubrics, questions, pitfalls) with 45 sources in SOURCES.md
+evals/                    generator eval (A/B over 30 fictional cases) and evaluator consistency
+examples/                 fictional CV and postings to try the full flow
 ```
 
-## Requisitos previos
+## Prerequisites
 
-- **macOS con Apple Silicon**: la transcripción usa MLX (GPU Metal). Por eso el backend corre nativo y solo la base va en Docker.
-- Python 3.12, Node.js 20.19+ o 22.12+, Docker (o OrbStack).
-- Claves de [OpenRouter](https://openrouter.ai/settings/keys) y [NVIDIA](https://build.nvidia.com).
+- **macOS on Apple Silicon**: transcription uses MLX (Metal GPU). That's why the backend
+  runs natively and only the database lives in Docker.
+- Python 3.12, Node.js 20.19+ or 22.12+, Docker (or OrbStack).
+- API keys for [OpenRouter](https://openrouter.ai/settings/keys) and
+  [NVIDIA](https://build.nvidia.com).
 
-## Instalación
+## Install
 
 ```bash
-cp .env.example .env                 # completá POSTGRES_PASSWORD, OPENROUTER_API_KEY y NVIDIA_API_KEY
+cp .env.example .env                 # fill in POSTGRES_PASSWORD, OPENROUTER_API_KEY and NVIDIA_API_KEY
 python3.12 -m venv backend/.venv
 backend/.venv/bin/pip install -r backend/requirements.lock.txt
 (cd frontend && npm ci)
 ```
 
-La primera transcripción descarga los pesos de Whisper en la revisión fijada en `.env` y verifica su hash
-(`STT_LOCAL_WEIGHTS_SHA256_PREFIX`).
+The first transcription downloads the Whisper weights at the revision pinned in `.env`
+and verifies their hash (`STT_LOCAL_WEIGHTS_SHA256_PREFIX`).
 
-## Ejecución
+## Run
 
 ```bash
 ./dev.sh
 ```
 
-Levanta Postgres (Docker), aplica las migraciones, inicia el backend en `127.0.0.1:8000` y el front en
-`http://127.0.0.1:5173`. Al arrancar, el backend indexa el corpus de `knowledge/` (solo re-embebe lo que cambió).
-`Ctrl+C` apaga backend y front; la base sigue corriendo (`docker compose down` para apagarla).
+Starts Postgres (Docker), applies migrations, boots the backend on `127.0.0.1:8000` and
+the frontend on `http://127.0.0.1:5173`. On startup the backend indexes the `knowledge/`
+corpus (it only re-embeds what changed). `Ctrl+C` stops backend and frontend; the
+database keeps running (`docker compose down` to stop it).
 
-## Probalo con datos de ejemplo
+## Try it with the example data
 
-En [`examples/`](examples/) hay un CV y tres avisos **ficticios** (backend Python, AI engineer y full stack).
-En la app: **Nueva postulación** → subí `examples/cv-ejemplo.md` como CV y uno de los avisos como puesto. La
-generación tarda ~2–3 minutos y cuesta ~US$0,60 en OpenRouter.
+[`examples/`](examples/) ships a **fictional** CV and three fictional postings (Python
+backend, AI engineer, full stack). In the app: **New application** → upload
+`examples/cv-ejemplo.md` as the CV and one of the postings as the role. Generation takes
+~2–3 minutes and costs ~US$0.60 on OpenRouter.
 
-## Variables de entorno
+## Environment variables
 
-Todas están documentadas en [`.env.example`](.env.example). Las principales:
+Everything is documented in [`.env.example`](.env.example). The main ones:
 
-| Variable | Uso |
+| Variable | Purpose |
 |---|---|
-| `POSTGRES_PASSWORD` | Contraseña de la base local |
-| `OPENROUTER_API_KEY` | LLM: análisis, preguntas, evaluación |
-| `NVIDIA_API_KEY` | Voz del entrevistador y embeddings |
-| `LLM_EVALUATOR_MODEL`, `LLM_FAST_MODEL` | Modelos de OpenRouter |
-| `OPENROUTER_DATA_COLLECTION` | `deny`: solo proveedores que no guardan datos |
+| `POSTGRES_PASSWORD` | Local database password |
+| `OPENROUTER_API_KEY` | LLM: analysis, questions, evaluation |
+| `NVIDIA_API_KEY` | Interviewer voice and embeddings |
+| `LLM_EVALUATOR_MODEL`, `LLM_FAST_MODEL` | OpenRouter models |
+| `OPENROUTER_DATA_COLLECTION` | `deny`: only providers that don't retain data |
 
-## Pruebas y verificaciones
+## Tests and checks
 
 ```bash
 cd backend && .venv/bin/python -m pytest          # 63 tests
-cd frontend && npm test                           # Vitest: contraste de tokens y regla del próximo paso
+cd frontend && npm test                           # Vitest: token contrast and the next-step rule
 cd frontend && npm run lint                       # oxlint
-cd frontend && npm run build                      # tsc + build de producción
-cd frontend && npm run test:e2e                   # Playwright + axe (requiere ./dev.sh corriendo)
+cd frontend && npm run build                      # tsc + production build
+cd frontend && npm run test:e2e                   # Playwright + axe (needs ./dev.sh running)
 ```
 
-Los tests de backend cubren métricas de voz, VAD, muletillas, evaluador (aplicabilidad de criterios, competencias),
-rúbricas, grafo del simulacro (repreguntas, salto justificado, idioma mixto), blueprint, validador de premisas,
-selección de candidatas, contexto por postulación, conversores de documentos, bloqueo SSRF y respuesta escrita.
-Los e2e corren axe-core (WCAG 2.2 AA) en 11 pantallas en tema claro y oscuro, reflow a 320 px, teclado, filtros,
-búsqueda y movimiento reducido.
+The backend tests cover voice metrics, VAD, filler words, the evaluator (criterion
+applicability, competencies), rubrics, the mock graph (follow-ups, justified skips, mixed
+language), the blueprint, the premise validator, candidate selection, per-application
+context, document converters, SSRF blocking and written answers. The e2e suite runs
+axe-core (WCAG 2.2 AA) over 11 screens in light and dark themes, 320 px reflow, keyboard,
+filters, search and reduced motion.
 
-Evals con costo (llaman al LLM):
+Evals with a cost (they call the LLM):
 
 ```bash
-backend/.venv/bin/python evals/run_generator.py --limit 3                       # ~US$0,58 por caso
-backend/.venv/bin/python evals/run_evaluator_consistency.py --n 5 --repeats 2   # ~US$0,90
+backend/.venv/bin/python evals/run_generator.py --limit 3                       # ~US$0.58 per case
+backend/.venv/bin/python evals/run_evaluator_consistency.py --n 5 --repeats 2   # ~US$0.90
 ```
 
-## API principal
+## Main API
 
-| Método | Ruta | Qué hace |
+| Method | Route | What it does |
 |---|---|---|
-| `POST` | `/api/ingest` | Convierte un archivo, texto o link a Markdown |
-| `POST` / `GET` | `/api/applications` | Crea (y genera preguntas) / lista postulaciones |
-| `GET` / `PATCH` / `DELETE` | `/api/applications/{id}` | Detalle, edición y borrado |
-| `GET` | `/api/applications/{id}/events` | SSE con el progreso de la generación |
-| `GET` | `/api/applications/{id}/context?view=coach\|mock` | Preguntas; `mock` no envía pistas ni evidencia esperada |
-| `POST` | `/api/practice/turns` | Respuesta (audio o texto) de una práctica |
-| `GET` | `/api/turns/{id}/events` | SSE con la evaluación por etapas |
-| `POST` | `/api/mock/sessions`, `…/{id}/answer`, `…/{id}/finish` | Simulacro |
-| `POST` | `/api/exercise/sessions`, `…/{id}/clarify`, `…/{id}/submit` | Ejercicio escrito |
-| `GET` | `/api/progress`, `/api/sessions`, `/api/quality` | Progreso, historial y métricas del sistema |
-| `GET` | `/api/health` | Estado de STT y RAG |
+| `POST` | `/api/ingest` | Converts a file, raw text or link to Markdown |
+| `POST` / `GET` | `/api/applications` | Creates (and generates questions) / lists applications |
+| `GET` / `PATCH` / `DELETE` | `/api/applications/{id}` | Detail, edit and delete |
+| `GET` | `/api/applications/{id}/events` | SSE with generation progress |
+| `GET` | `/api/applications/{id}/context?view=coach\|mock` | Questions; `mock` never sends hints or expected evidence |
+| `POST` | `/api/practice/turns` | A practice answer (audio or text) |
+| `GET` | `/api/turns/{id}/events` | SSE with the staged evaluation |
+| `POST` | `/api/mock/sessions`, `…/{id}/answer`, `…/{id}/finish` | Mock interview |
+| `POST` | `/api/exercise/sessions`, `…/{id}/clarify`, `…/{id}/submit` | Written exercise |
+| `GET` | `/api/progress`, `/api/sessions`, `/api/quality` | Progress, history and system metrics |
+| `GET` | `/api/health` | STT and RAG status |
 
-## Privacidad y seguridad
+## Privacy and security
 
-- El audio se transcribe localmente y se borra apenas se procesa; solo se guarda texto.
-- A OpenRouter va texto, con `data_collection: deny`. El CV nunca se manda a NVIDIA.
-- La carga por link solo acepta http/https y bloquea direcciones internas y locales (anti-SSRF), con límites de tamaño.
-- En los prompts de generación, coach y evaluación, CV, aviso y respuestas van delimitados como datos, no como instrucciones.
-- El simulacro pide `view=mock`: la evidencia esperada, las pistas y la política de repreguntas no llegan al navegador.
-- La API y la base solo escuchan en `127.0.0.1`. **No hay autenticación**: está pensada para una sola persona en local.
-- `data/private/` (CV, avisos, resultados con respuestas) y los audios de prueba no se versionan.
+- Audio is transcribed locally and deleted as soon as it's processed; only text is stored.
+- Only text goes to OpenRouter, with `data_collection: deny`. The CV is never sent to NVIDIA.
+- Link ingestion accepts only http/https and blocks internal and local addresses
+  (anti-SSRF), with size limits.
+- In the generation, coach and evaluation prompts, the CV, the posting and your answers
+  are delimited as data, never as instructions.
+- The mock requests `view=mock`: expected evidence, hints and the follow-up policy never
+  reach the browser.
+- API and database listen on `127.0.0.1` only. **There is no authentication**: it's built
+  for a single person running it locally.
+- `data/private/` (CVs, postings, results with answers) and test audio are never committed.
 
-## Limitaciones conocidas
+## Known limitations
 
-- Requiere Apple Silicon para la transcripción local; no hay despliegue ni imagen Docker del backend.
-- Uso local y de una sola persona: sin autenticación, sin límite de uso ni tope de gasto del LLM.
-- La calidad del análisis depende del LLM: los estados de evidencia describen el CV y pueden contener inferencias del modelo.
-- Los endpoints de NVIDIA usados son de prueba (sus términos registran input/output).
+- Local transcription requires Apple Silicon; there's no deployment or Docker image of
+  the backend.
+- Single-person local use: no auth, no rate limiting, no LLM spending cap.
+- Analysis quality depends on the LLM: evidence states describe the CV and may contain
+  model inferences.
+- The NVIDIA endpoints used are trial endpoints (their terms log input/output).
 
-## Licencia
+## License
 
-Todos los derechos reservados: el código se publica solo para consulta. Ver [`LICENSE`](LICENSE).
+All rights reserved — the code is published for review, with an explicit exception that
+allows cloning and running it locally for technical evaluation or hiring purposes. See
+[`LICENSE`](LICENSE).
 
-Recursos de terceros: ilustraciones de [unDraw](https://undraw.co/license) (uso decorativo, modificadas) y fuentes
-Geist y Geist Mono (licencia OFL).
+Third-party assets: [unDraw](https://undraw.co/license) illustrations (decorative use,
+modified) and the Geist and Geist Mono fonts (OFL).
