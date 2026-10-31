@@ -55,16 +55,17 @@ export default function Exercise() {
     return () => clearInterval(t)
   }, [phase])
 
-  if (ctx.isLoading) return <Skeleton className="h-64 w-full" />
-  const exercises = (ctx.data?.questions ?? []).filter((x) => x.format === "exercise" && x.exercise)
-
   // Draft saved in this browser (COGA 4.5.9: avoid losing work). Convenience, not critical data.
+  // Declared before the loading return below: hooks must run on every render.
   const draftKey = (qid: string) => `simulador.exercise.${appId}.${qid}`
   useEffect(() => {
     if (!q || phase !== "working") return
     try { localStorage.setItem(draftKey(q.id), text) } catch { /* storage unavailable */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text])
+
+  if (ctx.isLoading) return <Skeleton className="h-64 w-full" />
+  const exercises = (ctx.data?.questions ?? []).filter((x) => x.format === "exercise" && x.exercise)
 
   function start(x: Question) {
     let saved = ""
