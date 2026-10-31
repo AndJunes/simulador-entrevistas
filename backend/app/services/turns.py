@@ -68,6 +68,7 @@ def run_practice_turn(turn_id: str, raw_path: str | None, help_requested: bool, 
     try:
         with db() as s:
             t = s.get(Turn, turn_id)
+            assert t is not None
             lang, attempt_of, qid, sid = t.lang, t.attempt_of, t.question_id, t.session_id
             asked, parent_tid = t.question_text, t.parent_turn_id
             parent = s.get(Turn, parent_tid) if parent_tid else None
@@ -89,6 +90,7 @@ def run_practice_turn(turn_id: str, raw_path: str | None, help_requested: bool, 
         else:
             events.emit(cid, "transcribing", eta_s=6)
             _check(cid)
+            assert raw_path is not None  # the API requires audio when there is no written answer
             a = analyze_audio(turn_id, raw_path, lang, q["type"], None if thread else q, ctx.glossary())
         timings["stt"] = a.get("stt_s")
         _check(cid)

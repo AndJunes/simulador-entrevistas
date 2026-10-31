@@ -37,6 +37,7 @@ def generate(app_id: str) -> None:
     try:
         with db() as s:
             a = s.get(Application, app_id)
+            assert a is not None
             cv, job = a.cv_md, a.job_md
             a.status, a.error = "generating", None
         events.emit(cid, "reading")
@@ -44,6 +45,7 @@ def generate(app_id: str) -> None:
         events.emit(cid, "saving")
         with db() as s:
             a = s.get(Application, app_id)
+            assert a is not None
             a.title = (out["title"] or "").strip()[:200] or a.title
             for f in FIELDS:
                 setattr(a, f, out[f])

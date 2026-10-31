@@ -27,6 +27,7 @@ dev = [
     "ruff",
     "mypy",
     "pytest-cov>=7.1.0",
+    "types-pyyaml>=6.0.12.20261030",
 ]
 # Local voice transcription (MLX needs Apple Silicon). Pins match the versions
 # audited with OSV before adoption; on other platforms the group resolves empty
@@ -49,6 +50,11 @@ ignore = ["B008"]  # Depends(...)/File(...)/Form(...) in parameter defaults is t
 files = ["app"]
 check_untyped_defs = true
 no_implicit_optional = true
+
+[[tool.mypy.overrides]]
+# Optional local-STT dependency (Apple Silicon only); ships no stubs or py.typed marker.
+module = "mlx_whisper.*"
+ignore_missing_imports = true
 
 [tool.coverage.report]
 fail_under = 55

@@ -6,6 +6,7 @@ is DERIVED from the format and picks the evaluator's rubric.
 """
 
 import re
+from typing import cast
 
 STAGES = {  # stage: (label, min minutes, max minutes)
     "recruiter_screen": ("Recruiter screen", 15, 20),
@@ -121,14 +122,14 @@ def _stage_for(fmt: str) -> str:
 
 def normalize_question(q: dict, i: int) -> dict:
     """Fills in and validates a question. Accepts the old format (type/pitch/followup/guidance) and the new one."""
-    fmt = q.get("format") if q.get("format") in FORMATS else _legacy_format(q)
+    fmt = cast(str, q.get("format")) if q.get("format") in FORMATS else _legacy_format(q)
     qtype = FORMAT_TYPE[fmt]
     # old format (no `format`): the bank was ONE screening with STAR stories inside → a single stage
     stage = (
         q.get("stage") if q.get("stage") in STAGES else ("recruiter_screen" if "format" not in q else _stage_for(fmt))
     )
     dur = (
-        q.get("duration")
+        cast(list, q.get("duration"))
         if isinstance(q.get("duration"), list) and len(q["duration"]) == 2
         else DEFAULT_DURATION[qtype]
     )
@@ -150,7 +151,7 @@ def normalize_question(q: dict, i: int) -> dict:
         if isinstance(t, dict) and str(t.get("ask", "")).strip()
     ][:6]
 
-    hints = q.get("hints") if isinstance(q.get("hints"), dict) else {}
+    hints = cast(dict, q.get("hints")) if isinstance(q.get("hints"), dict) else {}
     hints = {
         "structure": (hints.get("structure") or "").strip(),
         "cv_examples": _list(hints.get("cv_examples")),
@@ -177,7 +178,7 @@ def normalize_question(q: dict, i: int) -> dict:
             "minutes": int(ex.get("minutes") or 30),
         }
 
-    val = q.get("validation") if isinstance(q.get("validation"), dict) else {}
+    val = cast(dict, q.get("validation")) if isinstance(q.get("validation"), dict) else {}
     priority = (
         q.get("priority") if q.get("priority") in PRIORITIES else ("must_have" if fmt != "logistics" else "important")
     )

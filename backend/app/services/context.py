@@ -187,8 +187,8 @@ def for_session(session_id: str) -> AppContext:
 def parse_legacy_job(md: str) -> dict:
     """Reads the legacy Markdown format (question and requirement tables) to migrate it without spending LLM calls."""
     qs = []
-    for line in md.splitlines():
-        m = re.match(r"^\|\s*(Q\d+)\s*\|(.+?)\|(.+?)\|\s*(screening|star)\s*\|(?:(.+?)\|)?", line)
+    for row in md.splitlines():
+        m = re.match(r"^\|\s*(Q\d+)\s*\|(.+?)\|(.+?)\|\s*(screening|star)\s*\|(?:(.+?)\|)?", row)
         if m:
             qs.append(
                 {
@@ -204,8 +204,8 @@ def parse_legacy_job(md: str) -> dict:
         q["followup"] = q["id"] not in ("Q8", "Q9")
         q["duration"] = [60, 90] if q["pitch"] else DEFAULT_DURATION[q["type"]]
     reqs = []
-    for line in md.splitlines():
-        m = re.match(r"^\|\s*(R\d+)\s*\|(.+?)\|(.+?)\|", line)
+    for row in md.splitlines():
+        m = re.match(r"^\|\s*(R\d+)\s*\|(.+?)\|(.+?)\|", row)
         if m:
             reqs.append({"id": m.group(1), "text": m.group(2).strip(), "cv_evidence": m.group(3).strip()})
 

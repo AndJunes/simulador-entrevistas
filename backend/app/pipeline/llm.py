@@ -7,6 +7,7 @@ import math
 from functools import lru_cache
 
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel
 
 from app.core.config import env
@@ -48,7 +49,9 @@ def strict_schema(model: type[BaseModel]) -> dict:
     return schema
 
 
-def structured(model: str, messages: list[dict], schema: type[BaseModel], effort: str = "medium"):
+def structured[M: BaseModel](
+    model: str, messages: list[ChatCompletionMessageParam], schema: type[M], effort: str = "medium"
+) -> tuple[M, float]:
     """Structured-output call. Returns (validated object, cost_usd)."""
     resp = openrouter().chat.completions.create(
         model=model,
@@ -64,7 +67,9 @@ def structured(model: str, messages: list[dict], schema: type[BaseModel], effort
         },
     )
     usage = resp.usage.model_dump() if resp.usage else {}
-    return schema.model_validate_json(resp.choices[0].message.content), (usage.get("cost") or 0.0)
+    content = resp.choices[0].message.content
+    assert content is not None  # strict structured output always returns content
+    return schema.model_validate_json(content), (usage.get("cost") or 0.0)
 
 
 def embed(texts: list[str], input_type: str) -> list[list[float]]:
@@ -85,7 +90,7 @@ def embed(texts: list[str], input_type: str) -> list[list[float]]:
     return out
 
 
-def text(model: str, messages: list[dict], effort: str = "low") -> tuple[str, float]:
+def text(model: str, messages: list[ChatCompletionMessageParam], effort: str = "low") -> tuple[str, float]:
     """Free-text call (no schema). Returns (text, cost_usd)."""
     resp = openrouter().chat.completions.create(
         model=model,

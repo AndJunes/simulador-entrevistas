@@ -8,6 +8,7 @@
 
 import re
 from functools import lru_cache
+from typing import Any
 
 import yaml
 
@@ -212,7 +213,10 @@ def compare(prev: dict, cur: dict) -> dict:
     cs = {c["id"]: c["score"] for c in (cur.get("evaluation") or {}).get("criteria", []) if ok(c)}
     pc = (prev.get("evaluation") or {}).get("competency") or {}
     cc = (cur.get("evaluation") or {}).get("competency") or {}
-    out = {"metrics": {k: [pm.get(k), cm.get(k)] for k in keys}, "criteria": {k: [ps.get(k), cs[k]] for k in cs}}
+    out: dict[str, Any] = {
+        "metrics": {k: [pm.get(k), cm.get(k)] for k in keys},
+        "criteria": {k: [ps.get(k), cs[k]] for k in cs},
+    }
     if cc.get("score"):
         out["competency"] = {
             "id": cc.get("id"),

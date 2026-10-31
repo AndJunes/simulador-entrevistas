@@ -10,7 +10,9 @@ import statistics
 import threading
 import time
 from collections import defaultdict
+from collections.abc import Sequence
 from datetime import UTC, datetime
+from typing import Any
 
 from langgraph.types import Command
 from pydantic import BaseModel
@@ -63,7 +65,7 @@ def _say(text: str, lang: str) -> str | None:
         return None
 
 
-def prewarm_tts(state: dict) -> None:
+def prewarm_tts(state: G.InterviewState) -> None:
     """Synthesizes the predictable lines in the background so the interviewer doesn't lag."""
 
     def work():
@@ -91,7 +93,7 @@ def start(app_id: str, mode: str, lang: str, stage: str, settings: dict) -> dict
         s.add(sess)
         s.flush()
         sid = sess.id
-    init = {
+    init: G.InterviewState = {
         "session_id": sid,
         "application_id": app_id,
         "lang": lang,
@@ -104,6 +106,7 @@ def start(app_id: str, mode: str, lang: str, stage: str, settings: dict) -> dict
     }
     result = GRAPH.invoke(init, _cfg(sid))
     p = _interrupt_payload(result)
+    assert p is not None  # the graph always interrupts on the first question
     prewarm_tts(init)
     return {
         "session_id": sid,
@@ -132,7 +135,7 @@ def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> di
     if p["is_followup"]:
         parent_tid = ((st.get("threads") or {}).get(p["parent"], {}).get("answers") or [{}])[0].get("turn_id")
     with db() as s:
-        t = Turn(
+        t: Turn | None = Turn(
             session_id=sid,
             question_id=p["qid"],
             question_text=p["text"],
@@ -145,6 +148,7 @@ def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> di
         )
         s.add(t)
         s.flush()
+        assert t is not None
         turn_id = t.id
     t0 = time.perf_counter()
     qtype = "screening" if p["type"] in ("closing", "logistics") else p["type"]
@@ -153,10 +157,12 @@ def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> di
 
         a = written_answer(text_answer)
     else:
+        assert raw_path is not None  # the API requires audio when there is no written answer
         a = analyze_audio(turn_id, raw_path, lang, qtype, qdict if not p["is_followup"] else None, ctx.glossary())
     text = a["transcript"]["text"] if a.get("has_speech") else ""
     with db() as s:
         t = s.get(Turn, turn_id)
+        assert t is not None
         t.transcript, t.metrics, t.low_conf_words = a.get("transcript"), a.get("metrics"), a.get("low_conf_words")
         t.timings = {"stt": a.get("stt_s")}
         # the main answer waits for the thread evaluation; follow-ups are evaluated within the thread
@@ -175,6 +181,7 @@ def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> di
         bye = state.get("say", "")
         with db() as s:
             sess = s.get(Session, sid)
+            assert sess is not None
             sess.status, sess.ended_at = "finished", datetime.now(UTC)
         return {
             "say": bye,
@@ -284,10 +291,12 @@ def _evaluate_thread(app_id: str, parent_qid: str, thread: dict, lang: str, answ
         if not transcript:
             with db() as s:
                 t = s.get(Turn, main_tid)
+                assert t is not None
                 t.status, t.extra = "done", extra
             return
         with db() as s:
             t = s.get(Turn, main_tid)
+            assert t is not None
             m = t.metrics or {}
             low = list(t.low_conf_words or [])
             for a in answers[1:]:
@@ -311,6 +320,7 @@ def _evaluate_thread(app_id: str, parent_qid: str, thread: dict, lang: str, answ
         )
         with db() as s:
             t = s.get(Turn, main_tid)
+            assert t is not None
             t.extra = extra
             if ev["ok"]:
                 t.evaluation, t.cost_usd, t.status = ev, ev["cost_usd"], "done"
@@ -320,6 +330,7 @@ def _evaluate_thread(app_id: str, parent_qid: str, thread: dict, lang: str, answ
         log.exception("bg eval failed")
         with db() as s:
             t = s.get(Turn, main_tid)
+            assert t is not None
             t.status, t.error = "error", str(e)[:500]
 
 
@@ -377,13 +388,16 @@ def build_report(sid: str) -> None:
         report = _compose(sid)
         with db() as s:
             sess = s.get(Session, sid)
+            assert sess is not None
             sess.report = report
             sess.status = "finished"
             sess.ended_at = sess.ended_at or datetime.now(UTC)
         try:
             report["audio_url"] = f"/api/audio/{tts.synthesize(report['llm']['spoken_summary'], 'es', 'coach')}.wav"
             with db() as s:
-                s.get(Session, sid).report = report
+                sess = s.get(Session, sid)
+                assert sess is not None
+                sess.report = report
         except Exception:  # noqa: BLE001
             pass
         events.emit(cid, "done", report=report)
@@ -398,7 +412,9 @@ def _avg(xs):
 
 def aggregates(rows: list[dict], metrics_list: list[dict]) -> dict:
     """Averages WITHOUT an overall grade: delivery metrics, applicable criteria and competencies (logistics doesn't score)."""
-    crit, comp = defaultdict(list), {}
+    crit: defaultdict[str, list] = defaultdict(list)
+    comp: dict[str, dict] = {}
+    c: Any
     for r in rows:
         ev = r.get("evaluation") or {}
         if r["type"] in evaluator.NOT_SCORED_TYPES:
@@ -427,7 +443,7 @@ def aggregates(rows: list[dict], metrics_list: list[dict]) -> dict:
     }
 
 
-def report_rows(turns: list[Turn]) -> tuple[list[dict], list[dict]]:
+def report_rows(turns: Sequence[Turn]) -> tuple[list[dict], list[dict]]:
     """Groups turns by question: the main one with its follow-ups (thread). Returns (rows, closing_questions)."""
     by_parent = defaultdict(list)
     for t in turns:
@@ -480,6 +496,7 @@ def report_rows(turns: list[Turn]) -> tuple[list[dict], list[dict]]:
 def _compose(sid: str) -> dict:
     with db() as s:
         sess = s.get(Session, sid)
+        assert sess is not None
         turns = s.execute(select(Turn).where(Turn.session_id == sid).order_by(Turn.created_at)).scalars().all()
         lang, stage = sess.lang, (sess.settings or {}).get("stage")
         cands = (

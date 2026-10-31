@@ -13,7 +13,7 @@
 """
 
 from operator import add
-from typing import Annotated, TypedDict
+from typing import Annotated, Any, TypedDict
 
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
@@ -49,7 +49,7 @@ GREETING = {
     ("behavioral_client", "en"): "Hi {name}, thanks for your time. I'm with {company}. Today we'll talk about concrete "
     "work experiences and how you collaborate, for about {minutes} minutes. First question: {q}",
 }
-T = {
+T: dict[str, dict[str, Any]] = {
     "es": {
         "transitions": [
             "Genial, gracias.",
