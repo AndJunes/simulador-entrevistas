@@ -201,7 +201,10 @@ backend/.venv/bin/python evals/run_evaluator_consistency.py --n 5 --repeats 2   
 ## Limitaciones conocidas
 
 - La transcripción de voz local requiere Apple Silicon; en otros equipos el backend corre en modo texto. No hay despliegue del backend.
-- Uso local y de una sola persona: sin autenticación, sin límite de uso ni tope de gasto del LLM.
+- Uso local y de una sola persona: sin autenticación ni tope de gasto del LLM. El trabajo
+  en segundo plano está acotado (6 trabajos en paralelo, 429 por encima) y un reinicio
+  convierte lo que estaba en curso en errores reintentables, pero el progreso de los SSE
+  vive en memoria.
 - La calidad del análisis depende del LLM: los estados de evidencia describen el CV y pueden contener inferencias del modelo.
 - Los endpoints de NVIDIA usados son de prueba (sus términos registran input/output).
 

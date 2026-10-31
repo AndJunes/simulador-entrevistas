@@ -1,11 +1,10 @@
 """Per-question practice: sessions, turns and turn feedback."""
 
-import threading
-
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.api.helpers import get_app, save_upload, sse, turn_dict
 from app.api.schemas import FollowupFlag, NewSession, Rating
+from app.core import jobs
 from app.db.models import Session, Turn
 from app.db.session import db
 from app.pipeline import stt
@@ -77,11 +76,7 @@ async def new_turn(
         s.flush()
         tid = t.id
     events.open_channel(tid)
-    threading.Thread(
-        target=turns.run_practice_turn,
-        args=(tid, raw, help_requested, None if audio is not None else text),
-        daemon=True,
-    ).start()
+    jobs.submit(turns.run_practice_turn, tid, raw, help_requested, None if audio is not None else text)
     return {"turn_id": tid}
 
 

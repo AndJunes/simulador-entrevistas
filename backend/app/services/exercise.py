@@ -7,12 +7,12 @@
 """
 
 import logging
-import threading
 import time
 import traceback
 
 from pydantic import BaseModel
 
+from app.core import jobs
 from app.core.config import env
 from app.db.models import Session, Turn
 from app.db.session import db
@@ -112,7 +112,7 @@ def submit(sid: str, qid: str, text: str, elapsed_s: float | None) -> str:
         s.flush()
         tid = t.id
     events.open_channel(tid)
-    threading.Thread(target=_evaluate, args=(tid, ctx.id, qid, lang, text, clar), daemon=True).start()
+    jobs.submit(_evaluate, tid, ctx.id, qid, lang, text, clar)
     return tid
 
 
