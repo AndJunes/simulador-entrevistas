@@ -38,3 +38,7 @@ evals/results/
 *.log
 .vscode/
 .idea/
+
+# Coverage
+.coverage
+htmlcov/

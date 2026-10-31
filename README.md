@@ -138,6 +138,13 @@ the frontend on `http://127.0.0.1:5173`. On startup the backend indexes the `kno
 corpus (it only re-embeds what changed). `Ctrl+C` stops backend and frontend; the
 database keeps running (`docker compose down` to stop it).
 
+Off macOS — or to try the API without installing Python — the text-mode backend also
+runs as a container (database + migrations + API):
+
+```bash
+docker compose --env-file .env --profile api up -d
+```
+
 ## Try it with the example data
 
 [`examples/`](examples/) ships a **fictional** CV and three fictional postings (Python
