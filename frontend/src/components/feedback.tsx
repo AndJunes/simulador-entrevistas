@@ -7,9 +7,9 @@ import { type Coaching, type Comparison, type EvaluationBody, type Metrics, type
 import { cn } from "@/lib/utils"
 import { ScoreDots } from "./common"
 
-// Transcripción
+// Transcript
 
-/** Muletillas: fondo + subrayado + etiqueta "muletilla" (WCAG 1.4.1). Pausas: ⏸ con duración. Baja confianza: punteado. */
+/** Fillers: background + underline + "muletilla" label (WCAG 1.4.1). Pauses: ⏸ with duration. Low confidence: dotted. */
 export function TranscriptView({ transcript, metrics }: { transcript: Transcript; metrics?: Metrics | null }) {
   const fill = new Set(metrics?.filler_word_idx ?? [])
   const low = new Set(metrics?.low_confidence_idx ?? [])
@@ -52,7 +52,7 @@ export function TranscriptView({ transcript, metrics }: { transcript: Transcript
   )
 }
 
-// Métricas de forma
+// Delivery metrics
 
 function Metric({ label, value, hint, status }: { label: string; value: string; hint?: string; status?: string }) {
   return (
@@ -91,12 +91,12 @@ export function MetricsPanel({ m }: { m: Metrics }) {
   )
 }
 
-// Evaluación
+// Evaluation
 
 export function FeedbackView({ ev, comparison }: { ev: EvaluationBody; comparison?: Comparison | null }) {
   return (
     <div className="flex flex-col gap-6">
-      {/* Feed up: qué evalúa la pregunta */}
+      {/* Feed up: what the question assesses */}
       {ev.feed_up && (
         <p className="flex items-start gap-2 rounded-lg bg-accent/60 p-3 text-sm text-accent-foreground">
           <TargetIcon className="mt-0.5 size-4 shrink-0" /> <span><strong>Qué evalúa esta pregunta:</strong> {ev.feed_up}</span>
@@ -105,7 +105,7 @@ export function FeedbackView({ ev, comparison }: { ev: EvaluationBody; compariso
 
       {comparison && <ComparisonView c={comparison} />}
 
-      {/* Fortalezas primero (conductas concretas) */}
+      {/* Strengths first (concrete behaviours) */}
       <section aria-labelledby="fort">
         <h3 id="fort" className="mb-2 flex items-center gap-2 font-medium"><SparklesIcon className="size-4" /> Lo que hiciste bien</h3>
         <ul className="flex flex-col gap-1.5 text-sm">
@@ -113,7 +113,7 @@ export function FeedbackView({ ev, comparison }: { ev: EvaluationBody; compariso
         </ul>
       </section>
 
-      {/* Feed forward: máximo 3 mejoras con frase de ejemplo */}
+      {/* Feed forward: at most 3 improvements with an example sentence */}
       <section aria-labelledby="mej">
         <h3 id="mej" className="mb-2 flex items-center gap-2 font-medium"><LightbulbIcon className="size-4" /> Para la próxima (en orden de prioridad)</h3>
         <ol className="flex flex-col gap-3">
@@ -127,7 +127,7 @@ export function FeedbackView({ ev, comparison }: { ev: EvaluationBody; compariso
         </ol>
       </section>
 
-      {/* Feed back: rúbrica con evidencia */}
+      {/* Feed back: rubric with evidence */}
       <section aria-labelledby="rub">
         <h3 id="rub" className="mb-2 font-medium">Cómo te fue en cada criterio</h3>
         <ul className="flex flex-col divide-y rounded-lg border">
@@ -157,7 +157,7 @@ export function FeedbackView({ ev, comparison }: { ev: EvaluationBody; compariso
         </section>
       )}
 
-      {/* Respuesta modelo: solo después de intentar, plegada */}
+      {/* Model answer: only after trying, collapsed */}
       <ModelAnswer text={ev.model_answer} />
     </div>
   )
@@ -230,7 +230,7 @@ export function ComparisonView({ c }: { c: Comparison }) {
   )
 }
 
-// Modo en blanco
+// Blank mode
 
 export function CoachingView({ c, compact = false }: { c: Coaching["coaching"]; compact?: boolean }) {
   if (compact) {

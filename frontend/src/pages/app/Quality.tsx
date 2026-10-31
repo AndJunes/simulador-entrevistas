@@ -9,7 +9,7 @@ import { useAppId } from "@/lib/app"
 
 const fmt = (v: number | null | undefined, u = "") => (v == null ? "–" : `${v}${u}`)
 
-/** Calidad del SISTEMA (no tuya): ¿el generador, el entrevistador y el evaluador hacen bien su trabajo? */
+/** SYSTEM quality (not yours): do the generator, interviewer and evaluator do their job well? */
 export default function Quality() {
   const appId = useAppId()
   const q = useQuery({ queryKey: ["quality", appId], queryFn: () => api.quality(appId) })

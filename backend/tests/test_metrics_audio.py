@@ -1,4 +1,4 @@
-"""Tests deterministas: métricas de forma, muletillas, VAD y borrado de audio."""
+"""Deterministic tests: delivery metrics, fillers, VAD and audio deletion."""
 import wave
 from pathlib import Path
 
@@ -31,7 +31,7 @@ def test_discourse_marker_needs_overuse():
 
 def test_like_as_verb_is_not_filler():
     m = metrics.form_metrics(words("I like Rust, like, a lot, like, so like hard"), VAD_FLAT, "en", "star", None)
-    # "I like" es verbo; los otros 3 "like" sí cuentan como sobreuso
+    # "I like" is a verb; the other 3 "like" do count as overuse
     assert m["markers_seen"].get("like") == 3
 
 
@@ -50,9 +50,9 @@ def test_duration_status_and_wpm():
 
 def test_long_pauses_from_vad_not_word_gaps():
     vad = {"speech_onset_s": 1.0, "speech_offset_s": 30.0,
-           "pauses": [{"start_s": 0.2, "end_s": 0.9, "dur_s": 0.7},          # antes de hablar: no cuenta
-                      {"start_s": 10.0, "end_s": 13.0, "dur_s": 3.0},        # larga
-                      {"start_s": 20.0, "end_s": 20.6, "dur_s": 0.6}]}       # corta
+           "pauses": [{"start_s": 0.2, "end_s": 0.9, "dur_s": 0.7},          # before speaking: doesn't count
+                      {"start_s": 10.0, "end_s": 13.0, "dur_s": 3.0},        # long
+                      {"start_s": 20.0, "end_s": 20.6, "dur_s": 0.6}]}       # short
     m = metrics.form_metrics(words("hola esto es una respuesta"), vad, "es", "star", None)
     assert [p["dur_s"] for p in m["long_pauses"]] == [3.0]
 
@@ -63,7 +63,7 @@ def test_onset_ignores_breath_before_first_word():
 
 
 def _write_wav(path: Path, segments: list[tuple[float, float]], sr: int = 16000):
-    """Silencio con ruido de fondo bajo + tonos (habla simulada) en los intervalos dados."""
+    """Silence with low background noise + tones (simulated speech) in the given intervals."""
     rng = np.random.default_rng(0)
     total = max(e for _, e in segments) + 2.0
     x = rng.normal(0, 0.002, int(total * sr))

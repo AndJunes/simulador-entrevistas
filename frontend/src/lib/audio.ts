@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { readSettings } from "./settings"
 
-// Micrófono
+// Microphone
 
 export type MicError = "NotAllowedError" | "NotFoundError" | "NotReadableError" | "Timeout" | "Unknown"
 
@@ -20,9 +20,9 @@ export const MIC_ERROR_TEXT: Record<MicError, { title: string; body: string }> =
 }
 
 /**
- * Sin procesamiento de llamada: con cancelación de eco / AGC activos, Chrome en macOS pasa el audio a "modo
- * llamada" y procesa también lo que sale por los parlantes (bombeo, golpes); con auriculares Bluetooth con
- * micrófono, además baja a calidad telefónica. No hace falta: nunca grabamos mientras habla el entrevistador.
+ * No call processing: with echo cancellation / AGC on, Chrome on macOS switches the audio to "call
+ * mode" and also processes what comes out of the speakers (pumping, thumps); with Bluetooth headphones with
+ * a mic it also drops to phone quality. Unnecessary: we never record while the interviewer speaks.
  */
 export async function openMic(timeoutMs = 20000): Promise<MediaStream> {
   const p = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
@@ -35,9 +35,9 @@ export async function openMic(timeoutMs = 20000): Promise<MediaStream> {
   }
 }
 
-// Medidor de nivel
+// Level meter
 
-/** Nivel del micrófono en dBFS (aprox.) muestreado ~20 veces por segundo. */
+/** Mic level in dBFS (approx.) sampled ~20 times per second. */
 export function useLevel(stream: MediaStream | null) {
   const [db, setDb] = useState(-100)
   useEffect(() => {
@@ -65,7 +65,7 @@ export function useLevel(stream: MediaStream | null) {
   return db
 }
 
-// Grabador
+// Recorder
 
 export interface Recording { blob: Blob; filename: string; durationS: number }
 
@@ -75,8 +75,8 @@ function pickMime(): string {
 }
 
 /**
- * Grabador con medición de silencio. `silenceS`: segundos desde la última vez que hubo voz
- * (o desde el inicio si todavía no hablaste) → para el "¿Te ayudo?" sin cortar la grabación.
+ * Recorder with silence measurement. `silenceS`: seconds since voice was last heard
+ * (or since the start if you haven't spoken yet) → for the "¿Te ayudo?" prompt without cutting the recording.
  */
 export function useRecorder(stream: MediaStream | null) {
   const rec = useRef<MediaRecorder | null>(null)
@@ -93,7 +93,7 @@ export function useRecorder(stream: MediaStream | null) {
 
   useEffect(() => {
     if (!recording) {
-      noise.current = Math.min(noise.current * 0.98 + level * 0.02, -30)   // piso de ruido entre grabaciones
+      noise.current = Math.min(noise.current * 0.98 + level * 0.02, -30)   // noise floor between recordings
       return
     }
     const now = performance.now()
@@ -102,7 +102,7 @@ export function useRecorder(stream: MediaStream | null) {
       lastVoice.current = now
       if (!spoke) setSpoke(true)
     }
-    // "hablando" se sostiene 350 ms tras la última voz para no parpadear entre sílabas
+    // "speaking" holds for 350 ms after the last voice so it doesn't flicker between syllables
     setSpeaking(voice || (lastVoice.current > 0 && now - lastVoice.current < 350))
     setElapsed((now - started.current) / 1000)
     setSilenceS((now - (lastVoice.current || started.current)) / 1000)
@@ -151,9 +151,9 @@ export function useRecorder(stream: MediaStream | null) {
   return { start, stop, discard, recording, elapsed, silenceS, spoke, speaking: recording && speaking, level }
 }
 
-// Reproducción
+// Playback
 
-/** Aplica volumen y velocidad elegidos por el usuario (la velocidad no cambia el tono). */
+/** Applies the user's chosen volume and rate (rate doesn't change pitch). */
 export function applyVoicePrefs(audio: HTMLAudioElement) {
   const s = readSettings()
   audio.volume = Math.min(1, Math.max(0, s.voiceVolume))
@@ -162,7 +162,7 @@ export function applyVoicePrefs(audio: HTMLAudioElement) {
   audio.preservesPitch = true
 }
 
-/** Reproduce un audio y resuelve al terminar (o al fallar). Devuelve el elemento para controles. */
+/** Plays an audio and resolves when it ends (or fails). Returns the element for controls. */
 export function playUrl(url: string, el?: HTMLAudioElement): { audio: HTMLAudioElement; done: Promise<void> } {
   const audio = el ?? new Audio()
   audio.src = url
@@ -175,7 +175,7 @@ export function playUrl(url: string, el?: HTMLAudioElement): { audio: HTMLAudioE
   return { audio, done }
 }
 
-/** Sonido suave cuando se abre el micrófono (Google Conversation Design: avisar que ya podés hablar). */
+/** Soft chime when the mic opens (Google Conversation Design: signal that you can speak now). */
 export function chime() {
   try {
     const ctx = new AudioContext()
@@ -190,18 +190,18 @@ export function chime() {
     o.start()
     o.stop(ctx.currentTime + 0.4)
     o.onended = () => ctx.close()
-  } catch { /* sin audio */ }
+  } catch { /* no audio */ }
 }
 
 export const fmtTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`
 
-// Nivel de lo que suena (entrevistador)
+// Output level (interviewer)
 
 const sources = new WeakMap<HTMLAudioElement, { ctx: AudioContext; an: AnalyserNode }>()
 
 /**
- * Amplitud 0–1 de lo que está sonando en un <audio> (AnalyserNode, Baseline desde 2015). Con esto el indicador de
- * "hablando" se mueve con la voz REAL y se detiene en silencio (WCAG 2.2.2: nada de pulsos infinitos decorativos).
+ * 0–1 amplitude of what's playing in an <audio> (AnalyserNode, Baseline since 2015). With this the
+ * "speaking" indicator moves with the REAL voice and stops in silence (WCAG 2.2.2: no infinite decorative pulses).
  */
 export function useOutputLevel(audio: HTMLAudioElement | null, active: boolean) {
   const [level, setLevel] = useState(0)

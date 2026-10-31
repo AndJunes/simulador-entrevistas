@@ -2,7 +2,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { cn } from "@/lib/utils"
 
-/** Markdown legible para CV y puesto. Sin HTML crudo (react-markdown lo ignora por defecto): seguro con texto de terceros. */
+/** Readable Markdown for CV and job. No raw HTML (react-markdown ignores it by default): safe with third-party text. */
 export function Markdown({ children, className }: { children: string; className?: string }) {
   return (
     <div className={cn("text-[15px] leading-7 text-foreground", className)}>

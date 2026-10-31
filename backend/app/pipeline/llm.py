@@ -1,6 +1,6 @@
-"""Clientes de OpenRouter (LLM) y NVIDIA (embeddings). Lecciones aprendidas:
-- Los Claude 5.5 NO aceptan temperature: se controla con reasoning.effort.
-- data_collection=deny para no enrutar a proveedores que guardan datos (CV, respuestas).
+"""OpenRouter (LLM) and NVIDIA (embeddings) clients. Lessons learned:
+- Claude 5.5 models do NOT accept temperature: control via reasoning.effort.
+- data_collection=deny to avoid routing to providers that retain data (CV, answers).
 """
 import math
 from functools import lru_cache
@@ -24,7 +24,7 @@ def nvidia_embeddings() -> OpenAI:
 
 
 def strict_schema(model: type[BaseModel]) -> dict:
-    """JSON schema estricto para structured outputs: additionalProperties=false y todo requerido."""
+    """Strict JSON schema for structured outputs: additionalProperties=false and everything required."""
     schema = model.model_json_schema()
 
     def fix(node):
@@ -43,7 +43,7 @@ def strict_schema(model: type[BaseModel]) -> dict:
 
 
 def structured(model: str, messages: list[dict], schema: type[BaseModel], effort: str = "medium"):
-    """Llamada con salida estructurada. Devuelve (objeto validado, costo_usd)."""
+    """Structured-output call. Returns (validated object, cost_usd)."""
     resp = openrouter().chat.completions.create(
         model=model,
         messages=messages,
@@ -60,7 +60,7 @@ def structured(model: str, messages: list[dict], schema: type[BaseModel], effort
 
 
 def embed(texts: list[str], input_type: str) -> list[list[float]]:
-    """Embeddings nemotron-3-embed-1b recortados a EMBEDDINGS_DIMENSIONS y renormalizados."""
+    """nemotron-3-embed-1b embeddings truncated to EMBEDDINGS_DIMENSIONS and renormalized."""
     dims = int(env("EMBEDDINGS_DIMENSIONS", "1024"))
     out: list[list[float]] = []
     for i in range(0, len(texts), 16):
@@ -75,7 +75,7 @@ def embed(texts: list[str], input_type: str) -> list[list[float]]:
 
 
 def text(model: str, messages: list[dict], effort: str = "low") -> tuple[str, float]:
-    """Llamada de texto libre (sin esquema). Devuelve (texto, costo_usd)."""
+    """Free-text call (no schema). Returns (text, cost_usd)."""
     resp = openrouter().chat.completions.create(
         model=model,
         messages=messages,

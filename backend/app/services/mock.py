@@ -1,8 +1,8 @@
-"""Simulacro de corrido / videollamada sobre el grafo de LangGraph.
+"""End-to-end mock interview / video call on top of the LangGraph graph.
 
-Por respuesta: STT + decisión de repregunta (rápido) → siguiente frase del entrevistador.
-La evaluación de cada pregunta corre EN SEGUNDO PLANO cuando se cierra su HILO (respuesta principal + repreguntas),
-mirando todo el hilo como una sola evidencia. Así el informe final sale rápido.
+Per answer: STT + follow-up decision (fast) → the interviewer's next line.
+Each question's evaluation runs IN THE BACKGROUND when its THREAD closes (main answer + follow-ups),
+treating the whole thread as one body of evidence. That way the final report comes out fast.
 """
 import logging
 import statistics
@@ -26,7 +26,7 @@ from app.services import context, events
 from app.services.turns import analyze_audio
 
 log = logging.getLogger("mock")
-INTERVIEW_STAGES = ("recruiter_screen", "technical_screen", "behavioral_client")   # el ejercicio tiene su propio modo
+INTERVIEW_STAGES = ("recruiter_screen", "technical_screen", "behavioral_client")   # the exercise has its own mode
 
 
 def stages_for(ctx: context.AppContext) -> list[dict]:
@@ -34,7 +34,7 @@ def stages_for(ctx: context.AppContext) -> list[dict]:
 
 
 def build_plan(ctx: context.AppContext, stage: str, lang: str) -> list[dict]:
-    """Preguntas de la etapa en el orden del banco. En modo mixto: primera mitad en español, el resto en inglés."""
+    """Stage questions in bank order. In mix mode: first half in Spanish, the rest in English."""
     b = ctx.stage(stage) or next(iter(stages_for(ctx)), None)
     if not b:
         return []
@@ -57,12 +57,12 @@ def _interrupt_payload(result) -> dict | None:
 def _say(text: str, lang: str) -> str | None:
     try:
         return f"/api/audio/{tts.synthesize(text, lang, 'interviewer')}.wav"
-    except Exception:  # noqa: BLE001  (sin voz, se muestra el texto)
+    except Exception:  # noqa: BLE001  (without voice, the text is shown)
         return None
 
 
 def prewarm_tts(state: dict) -> None:
-    """Sintetiza en segundo plano las frases previsibles para que el entrevistador no demore."""
+    """Synthesizes the predictable lines in the background so the interviewer doesn't lag."""
     def work():
         ctx = context.for_app(state["application_id"])
         name = ctx.candidate_first_name()
@@ -98,7 +98,7 @@ def start(app_id: str, mode: str, lang: str, stage: str, settings: dict) -> dict
 
 
 def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> dict:
-    """Procesa tu respuesta y devuelve lo próximo que dice el entrevistador."""
+    """Processes your answer and returns the interviewer's next line."""
     snap = GRAPH.get_state(_cfg(sid))
     if not snap or not snap.values.get("pending"):
         raise KeyError("sesión no encontrada o terminada (¿se reinició el servidor?)")
@@ -129,7 +129,7 @@ def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> di
         t = s.get(Turn, turn_id)
         t.transcript, t.metrics, t.low_conf_words = a.get("transcript"), a.get("metrics"), a.get("low_conf_words")
         t.timings = {"stt": a.get("stt_s")}
-        # la respuesta principal espera la evaluación del hilo; las repreguntas se evalúan dentro del hilo
+        # the main answer waits for the thread evaluation; follow-ups are evaluated within the thread
         t.status = "evaluating" if text and not p["is_followup"] and p["type"] != "closing" else "done"
 
     result = GRAPH.invoke(Command(resume={"text": text or "(silencio)", "turn_id": turn_id}), _cfg(sid))
@@ -141,7 +141,7 @@ def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> di
             threading.Thread(target=_evaluate_thread_bg, args=(ctx.id, p["parent"], th, lang), daemon=True).start()
     total = len(state["plan"])
     progress = {"index": min(state.get("idx", 0) + 1, total), "total": total}
-    if nxt is None:  # terminó: despedida
+    if nxt is None:  # finished: farewell
         bye = state.get("say", "")
         with db() as s:
             sess = s.get(Session, sid)
@@ -154,7 +154,7 @@ def answer(sid: str, raw_path: str | None, text_answer: str | None = None) -> di
 
 
 def thread_inputs(thread: dict) -> tuple[str, list[dict]]:
-    """Transcripción (solo lo que dijo la persona) y conversación del hilo para el evaluador."""
+    """Transcript (only what the person said) and the thread conversation for the evaluator."""
     answers = [a for a in thread.get("answers", []) if a.get("text") and a["text"] != "(silencio)"]
     transcript = "\n\n".join(a["text"] for a in answers)
     convo = []
@@ -163,7 +163,7 @@ def thread_inputs(thread: dict) -> tuple[str, list[dict]]:
     return transcript, convo
 
 
-_inflight: set[str] = set()       # turnos principales que ya se están evaluando (evita evaluar dos veces)
+_inflight: set[str] = set()       # main turns already being evaluated (prevents double evaluation)
 _inflight_lock = threading.Lock()
 
 
@@ -184,8 +184,8 @@ def _evaluate_thread_bg(app_id: str, parent_qid: str, thread: dict, lang: str) -
 
 
 def flush_open_threads(sid: str) -> int:
-    """Al terminar antes de tiempo (o tras reiniciar el servidor), evalúa los hilos que quedaron abiertos: la respuesta
-    principal y sus repreguntas se reconstruyen desde la base. Devuelve cuántos lanzó."""
+    """On early finish (or after a server restart), evaluates the threads left open: the main answer
+    and its follow-ups are rebuilt from the database. Returns how many it launched."""
     with db() as s:
         sess = s.get(Session, sid)
         turns = s.execute(select(Turn).where(Turn.session_id == sid).order_by(Turn.created_at)).scalars().all()
@@ -248,7 +248,7 @@ def _evaluate_thread(app_id: str, parent_qid: str, thread: dict, lang: str, answ
             t.status, t.error = "error", str(e)[:500]
 
 
-# ----------------------------------------------------------------------------- informe
+# ----------------------------------------------------------------------------- report
 
 class Pattern(BaseModel):
     pattern: str
@@ -281,7 +281,7 @@ class Report(BaseModel):
 
 
 def build_report(sid: str) -> None:
-    """Corre en segundo plano y emite progreso en el canal report:<sid>."""
+    """Runs in the background and emits progress on the report:<sid> channel."""
     cid = f"report:{sid}"
     try:
         flush_open_threads(sid)
@@ -321,7 +321,7 @@ def _avg(xs):
 
 
 def aggregates(rows: list[dict], metrics_list: list[dict]) -> dict:
-    """Promedios SIN nota global: métricas de forma, criterios aplicables y competencias (la logística no puntúa)."""
+    """Averages WITHOUT an overall grade: delivery metrics, applicable criteria and competencies (logistics doesn't score)."""
     crit, comp = defaultdict(list), {}
     for r in rows:
         ev = r.get("evaluation") or {}
@@ -350,7 +350,7 @@ def aggregates(rows: list[dict], metrics_list: list[dict]) -> dict:
 
 
 def report_rows(turns: list[Turn]) -> tuple[list[dict], list[dict]]:
-    """Agrupa los turnos por pregunta: la principal con sus repreguntas (hilo). Devuelve (filas, preguntas_finales)."""
+    """Groups turns by question: the main one with its follow-ups (thread). Returns (rows, closing_questions)."""
     by_parent = defaultdict(list)
     for t in turns:
         if t.is_followup and t.parent_turn_id:

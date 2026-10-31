@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 const MODE_LABEL: Record<string, string> = { practice: "Práctica por pregunta", mock: "Simulacro", videocall: "Videollamada", exercise: "Ejercicio técnico" }
 const MODE_ICON: Record<string, typeof PlayIcon> = { practice: MessagesSquareIcon, mock: PlayIcon, videocall: VideoIcon, exercise: Code2Icon }
 
-/** Los 4 modos de práctica. La duración es la que ya declara el producto en Practicar (Lobby). */
+/** The 4 practice modes. Durations are the ones the product already states in Practicar (Lobby). */
 const PRACTICE_MODES = [
   { id: "practice", title: "Modo coach", desc: "Recibí pistas graduales para construir una respuesta clara.", foot: "Guiado · 2–3 min por pregunta", icon: SparklesIcon },
   { id: "mock", title: "Simulacro completo", desc: "Respondé sin ayuda y recibí el informe al finalizar.", foot: "Realista · según la etapa", icon: PlayIcon },
@@ -21,13 +21,13 @@ const PRACTICE_MODES = [
   { id: "exercise", title: "Ejercicio técnico", desc: "Resolvé una tarea escrita relacionada con el puesto.", foot: "Práctico · 15–40 min", icon: Code2Icon },
 ] as const
 
-/** "2+ años de experiencia con Python (FastAPI)" → "2+ años de experiencia con Python" */
+/** "2+ años de experiencia con Python (FastAPI)" → "2+ años de experiencia con Python" (trims parentheticals) */
 const shortName = (t: string) => t.replace(/\s*\(.*?\)\s*/g, " ").split(/[:;.]/)[0].trim()
 const firstSentence = (t?: string) => t?.split(/(?<=\.)\s/)[0]
 
 /**
- * Resumen = puerta de entrada: qué candidatura, qué hacer ahora, cómo practicar, qué falta.
- * Todo sale de la API (application, sessions, progress); la recomendación sale de la regla determinista nextStep.
+ * Summary = entry point: which application, what to do now, how to practice, what's missing.
+ * Everything comes from the API (application, sessions, progress); the recommendation from the deterministic nextStep rule.
  */
 export default function Summary() {
   const appId = useAppId()
@@ -54,7 +54,7 @@ export default function Summary() {
   const hasExercise = a.questions.some((q) => q.format === "exercise")
   const modes = PRACTICE_MODES.filter((m) => m.id !== "exercise" || hasExercise)
   const sel = modes.find((m) => m.id === mode) ?? modes[0]
-  // Tags del hero: solo datos del análisis (familia de rol, seniority, inglés, tipo de entrevista)
+  // Hero tags: analysis data only (role family, seniority, English, interview type)
   const tags = [a.analysis?.role_family, a.analysis?.seniority, a.analysis?.english_required ? "Inglés" : null, a.interview?.type?.replace(/\*\*/g, "")]
     .filter((t): t is string => !!t && t.length < 40).map((t) => t.charAt(0).toUpperCase() + t.slice(1))
 
@@ -69,7 +69,7 @@ export default function Summary() {
         intro="Una vista clara de lo que ya podés demostrar y lo que conviene practicar a continuación."
         action={<Button asChild variant="soft" size="cta"><Link to={appPath(appId, "requisitos")}>Ver análisis completo <ArrowUpRightIcon aria-hidden /></Link></Button>} />
 
-      {/* Hero de la candidatura */}
+      {/* Application hero */}
       <section aria-labelledby="hero-h" className="relative mb-5 grid gap-7 overflow-hidden rounded-[21px] bg-ink p-[22px] text-ink-foreground shadow-[0_12px_32px_rgba(23,43,50,.06)] ring-1 ring-transparent dark:ring-white/15 min-[561px]:rounded-hero min-[561px]:p-[clamp(22px,3vw,36px)] min-[851px]:grid-cols-[minmax(0,1fr)_240px] min-[1151px]:grid-cols-[minmax(0,1.45fr)_minmax(220px,.55fr)]">
         <div aria-hidden className="pointer-events-none absolute -right-24 -top-36 size-[280px] rounded-full border border-lime/15 shadow-[0_0_0_35px_rgba(199,243,107,.035),0_0_0_75px_rgba(199,243,107,.025)]" />
         <div className="relative min-w-0">
@@ -143,7 +143,7 @@ export default function Summary() {
         </div>
       </section>
 
-      {/* Actividad reciente y brechas */}
+      {/* Recent activity and gaps */}
       <div className="mt-7 grid gap-[18px] min-[1151px]:grid-cols-[minmax(0,1.2fr)_minmax(270px,.8fr)]">
         <Panel aria-labelledby="act-h">
           <SectionHead id="act-h" title="Tu actividad reciente" sub="Retomá donde lo dejaste." to={appPath(appId, "resultados")} link="Ver historial" />
@@ -185,7 +185,7 @@ export default function Summary() {
               ))}
             </ul>
           ) : <p className="text-label text-muted-foreground">Todos los obligatorios tienen evidencia fuerte en tu CV.</p>}
-          {/* Aviso de interpretación: visible, no escondido */}
+          {/* Interpretation notice: visible, not hidden */}
           <p className="mt-3.5 flex gap-2 rounded-xl bg-background p-3 text-caption text-muted-foreground">
             <InfoIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
             Sin evidencia en el CV no significa necesariamente que no tengas esa competencia. Significa que el documento no la demuestra explícitamente.

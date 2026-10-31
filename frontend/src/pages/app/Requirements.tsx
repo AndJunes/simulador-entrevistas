@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 
 const STAGE_SHORT: Record<Stage, string> = { recruiter_screen: "Recruiter", technical_screen: "Técnica", behavioral_client: "Conductual", work_sample: "Ejercicio" }
 
-/** Requisitos del puesto y CV y evidencia: el mismo dato visto desde el requisito o desde el CV. */
+/** Job requirements and CV & evidence: the same data seen from the requirement or from the CV. */
 export default function Requirements({ view }: { view: "req" | "coverage" | "cv" }) {
   const appId = useAppId()
   const app = useQuery({ queryKey: ["app", appId], queryFn: () => api.application(appId) })
@@ -29,7 +29,7 @@ export default function Requirements({ view }: { view: "req" | "coverage" | "cv"
   return <ByRequirement a={a} isPracticed={isPracticed} />
 }
 
-// Por requisito
+// By requirement
 
 type Filter = "all" | "strong" | "partial" | "gap" | Priority
 const FILTERS: { v: Filter; label: string; test: (r: Requirement) => boolean }[] = [
@@ -62,7 +62,7 @@ function ByRequirement({ a, isPracticed }: { a: Application; isPracticed: (r: Re
   const mustOpen = must.filter((r) => r.coverage !== "strong").length
   const count = (t: (r: Requirement) => boolean) => sorted.filter(t).length
 
-  // #R2 en la URL: abre ese requisito y le da el foco
+  // #R2 in the URL: opens that requirement and gives it focus
   useEffect(() => {
     if (hash) document.getElementById(`req-btn-${hash.slice(1)}`)?.focus()
   }, [hash])
@@ -84,7 +84,7 @@ function ByRequirement({ a, isPracticed }: { a: Application; isPracticed: (r: Re
           <Button asChild variant="soft" size="cta"><Link to={appPath(appId, "requisitos/cobertura")}>Cobertura por etapa</Link></Button>
         </div>} />
 
-      {/* Resumen de cobertura: totales derivados de la API */}
+      {/* Coverage summary: totals derived from the API */}
       <Panel aria-labelledby="cov-sum-h">
         <Eyebrow>Resumen de cobertura</Eyebrow>
         <h2 id="cov-sum-h" className="my-1.5 text-xl font-bold tracking-[-0.03em]">{mustOpen ? `${mustOpen} de ${must.length} obligatorios sin evidencia completa` : "Todos los obligatorios tienen evidencia fuerte"}</h2>
@@ -98,7 +98,7 @@ function ByRequirement({ a, isPracticed }: { a: Application; isPracticed: (r: Re
         </dl>
       </Panel>
 
-      {/* Filtros + búsqueda: se combinan; estado en la URL */}
+      {/* Filters + search: combinable; state in the URL */}
       <div className="my-[15px] flex flex-wrap items-center gap-2">
         <label className="relative min-w-[200px] max-[560px]:w-full">
           <span className="sr-only">Buscar requisito</span>
@@ -147,7 +147,7 @@ function ByRequirement({ a, isPracticed }: { a: Application; isPracticed: (r: Re
                 </h3>
                 <div id={`req-panel-${r.id}`} className="collapse-grid" data-open={isOpen} inert={!isOpen}>
                   <div>
-                    {/* Detalle: dos bloques + acciones. La cita del aviso va etiquetada como tal, nunca como CV. */}
+                    {/* Detail: two blocks + actions. The posting quote is labeled as such, never as CV. */}
                     <div className="grid gap-3.5 border-t border-border/70 p-[18px] min-[561px]:grid-cols-2">
                       <div className="rounded-xl bg-soft p-[13px]">
                         <h4 className="mb-1.5 text-caption font-bold">Qué muestra la evidencia</h4>
@@ -186,7 +186,7 @@ function ByRequirement({ a, isPracticed }: { a: Application; isPracticed: (r: Re
   )
 }
 
-// Cobertura por etapa
+// Coverage by stage
 
 function Coverage({ a }: { a: Application }) {
   const appId = useAppId()
@@ -201,7 +201,7 @@ function Coverage({ a }: { a: Application }) {
     <div>
       {header}
       <SectionHead id="cov-h" title={cov.uncovered.length ? `Quedan sin evaluar: ${cov.uncovered.join(", ")}` : "Cada obligatorio se evalúa en al menos una etapa"} />
-      {/* ≥768px: tabla. <768px: lista (WCAG 1.4.10, sin scroll horizontal) */}
+      {/* ≥768px: table. <768px: list (WCAG 1.4.10, no horizontal scroll) */}
       <div className="hidden overflow-x-auto rounded-card border bg-card md:block">
         <table className="w-full text-label">
           <caption className="sr-only">Requisitos por etapa de la entrevista</caption>
@@ -234,7 +234,7 @@ function Coverage({ a }: { a: Application }) {
   )
 }
 
-// CV y evidencia
+// CV and evidence
 
 const GROUPS: { kind: EvidenceItem["kind"]; title: string; sub: string }[] = [
   { kind: "professional", title: "Experiencia profesional", sub: "Empleo. Cuenta como años de experiencia laboral." },
@@ -254,7 +254,7 @@ function ByExperience({ a }: { a: Application }) {
     action={<Button asChild variant="soft" size="cta"><Link to={appPath(appId, "requisitos")}>Ver requisitos vinculados →</Link></Button>} />
   if (!a.evidence?.length) return <>{header}<EmptyState name="candidate" title="Todavía no hay evidencia extraída de tu CV">Se extrae al generar la postulación con el formato nuevo (Practicar → Banco de preguntas → Actualizar).</EmptyState></>
   const backs = (e: EvidenceItem) => a.requirements.filter((r) => r.evidence_ids?.includes(e.id)).map((r) => r.id)
-  // Tecnologías → en qué evidencia aparecen (solo lo que dice el CV; no se infiere nada por ser "habitual")
+  // Technologies → which evidence they appear in (only what the CV says; nothing inferred for being "common")
   const techs = new Map<string, string[]>()
   for (const e of a.evidence) for (const t of e.technologies) techs.set(t, [...(techs.get(t) ?? []), e.id])
 

@@ -41,7 +41,7 @@ interface State {
   lastEvalTurn: { id: string; qid: string; lang: Lang; modelAnswer: string } | null
   guide: Coaching["coaching"] | null
   reference: { lang: Lang; text: string } | null
-  followup: { of: string; text: string } | null   // respondiendo la repregunta de práctica de la devolución anterior
+  followup: { of: string; text: string } | null   // answering the practice follow-up from the previous feedback
 }
 
 type Action =
@@ -133,7 +133,7 @@ export default function Practice() {
     phase: "pick", q: null, lang: (params.get("lang") as Lang) || settings.lang, lastEvalTurn: null, guide: null, reference: null, followup: null, ...blank,
   } as State)
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [writing, setWriting] = useState(false)   // alternativa escrita a la voz
+  const [writing, setWriting] = useState(false)   // written alternative to voice
   const [voiceFailed, setVoiceFailed] = useState(false)
   const [draft, setDraft] = useState("")
   const [announce, setAnnounce] = useState("")
@@ -142,7 +142,7 @@ export default function Practice() {
   const closeSse = useRef<(() => void) | null>(null)
   const chatScroll = useRef<HTMLDivElement>(null)
 
-  // sesión de práctica (una por visita). La ref evita crear dos en el doble montaje de StrictMode.
+  // practice session (one per visit). The ref avoids creating two on StrictMode's double mount.
   const creating = useRef(false)
   useEffect(() => {
     if (!creating.current) {
@@ -153,7 +153,7 @@ export default function Practice() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ?q=Q4 desde el informe ("practicar esta pregunta"): se usa una vez y se limpia de la URL
+  // ?q=Q4 from the report ("practice this question"): used once, then cleared from the URL
   useEffect(() => {
     const qid = params.get("q")
     if (qid && ctx.data) {
@@ -163,12 +163,12 @@ export default function Practice() {
     }
   }, [ctx.data, params, setParams])
 
-  // al salir de la página, el micrófono se libera
+  // on leaving the page, the mic is released
   useEffect(() => () => mic.release(), [mic.release])
 
   const startRecording = useCallback(async () => {
     if (settings.devFile) { dispatch({ type: "phase", phase: "recording" }); return }
-    const st = await mic.request()   // se abre recién ahora
+    const st = await mic.request()   // opens only now
     if (!st) { toast.error("No pudimos abrir el micrófono. Volvé al panel para probarlo."); return }
     chime()
     rec.start(st)
@@ -177,7 +177,7 @@ export default function Practice() {
     setTimeout(() => stopRef.current?.focus(), 50)
   }, [mic, rec, settings.devFile])
 
-  // fase "asking": decir la pregunta y (si corresponde) arrancar a grabar solo
+  // "asking" phase: say the question and (when configured) start recording automatically
   useEffect(() => {
     if (s.phase !== "asking" || !s.q) return
     let cancelled = false
@@ -191,7 +191,7 @@ export default function Practice() {
           const { audio, done } = playUrl(audio_url)
           questionAudio.current = audio
           await done
-        } catch { setVoiceFailed(true) /* sin voz: el texto está en pantalla */ }
+        } catch { setVoiceFailed(true) /* no voice: the text is on screen */ }
       }
       if (cancelled) return
       if (settings.autostart) startRecording()
@@ -236,7 +236,7 @@ export default function Practice() {
     dispatch({ type: "phase", phase: settings.autostart ? "asking" : "ready" })
   }
 
-  // el chat baja solo cuando aparece algo nuevo (como cualquier chat)
+  // the chat auto-scrolls when something new appears (like any chat)
   useEffect(() => {
     const el = chatScroll.current
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
@@ -247,7 +247,7 @@ export default function Practice() {
   const qs = ctx.data.questions
   const target = s.q?.duration ?? [60, 90]
 
-  // Elegir pregunta
+  // Pick a question
   if (s.phase === "pick" || !s.q) {
     const groups: [string, Question[]][] = ctx.data.stages.filter((st) => st.stage !== "work_sample")
       .map((st) => [st.label, qs.filter((q) => q.stage === st.stage && q.format !== "exercise")] as [string, Question[]])
@@ -302,7 +302,7 @@ export default function Practice() {
       </div>
 
       <div className="grid gap-4 lg:h-[calc(100svh-9rem)] lg:grid-cols-[7fr_3fr]">
-        {/* 70%: chat de la llamada */}
+        {/* 70%: call chat */}
         <section aria-label="Chat de la llamada" className="flex min-h-[70svh] flex-col overflow-hidden rounded-2xl border bg-card/60 lg:min-h-0">
           <header className="flex items-center justify-between gap-2 border-b px-4 py-2.5 text-sm">
             <span className="flex items-center gap-2 font-medium"><MessageSquareIcon className="size-4 text-primary" aria-hidden /> Chat de la llamada</span>
@@ -326,7 +326,7 @@ export default function Practice() {
             </div>
           </div>
 
-          {/* barra inferior, como la caja de un chat: los controles de cada momento */}
+          {/* bottom bar, like a chat composer: the controls for each moment */}
           <footer className="border-t bg-card p-3">
             {s.phase === "asking" && (
               <div className="flex flex-wrap items-center gap-2">
@@ -394,7 +394,7 @@ export default function Practice() {
           </footer>
         </section>
 
-        {/* 30%: lo que se está analizando y la respuesta completa; el resto, en "Detalles" */}
+        {/* 30%: what's being analyzed and the full answer; the rest, under "Detalles" */}
         <aside aria-label="Análisis" className="flex flex-col gap-4 lg:overflow-y-auto lg:pr-1">
           {(s.phase === "asking" || s.phase === "ready" || s.phase === "recording") && (
             <>
@@ -473,7 +473,7 @@ export default function Practice() {
   )
 }
 
-/** Banda de duración: guía visual del rango sugerido, no un límite. */
+/** Duration band: visual guide to the suggested range, not a limit. */
 function DurationBand({ elapsed, target }: { elapsed: number; target: number[] }) {
   const max = Math.max(target[1] * 1.4, elapsed + 5)
   return (
@@ -509,7 +509,7 @@ function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
 }
 
 
-/** Panel de grabación: estado siempre visible, nivel, banda de duración objetivo (guía, no corte). */
+/** Recording panel: always-visible state, level, target duration band (guide, not a cutoff). */
 export function RecordingPanel({ elapsed, level, silenceS, spoke, target, onStop, onHelp, onDiscard, stopRef, helpLabel = "Me quedé en blanco" }: {
   elapsed: number; level: number; silenceS: number; spoke: boolean; target: number[]
   onStop: () => void; onHelp?: () => void; onDiscard?: () => void; stopRef?: React.RefObject<HTMLButtonElement | null>; helpLabel?: string
@@ -550,7 +550,7 @@ export function RecordingPanel({ elapsed, level, silenceS, spoke, target, onStop
   )
 }
 
-/** Modo prueba: subir un archivo en vez de grabar. */
+/** Test mode: upload a file instead of recording. */
 export function FileAnswer({ onSubmit, allowHelp = true }: { onSubmit: (f: { blob: Blob; filename: string }, help: boolean) => void; allowHelp?: boolean }) {
   const [file, setFile] = useState<File | null>(null)
   return (

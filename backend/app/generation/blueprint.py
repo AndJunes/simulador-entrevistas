@@ -1,16 +1,16 @@
-"""Blueprint de entrevistas (etapa 4, DETERMINÍSTICA): qué competencias evalúa cada etapa y en cuánto tiempo.
+"""Interview blueprint (stage 4, DETERMINISTIC): which competencies each stage assesses, and in how much time.
 
-Etapas: recruiter screen, técnica, conductual/cliente y ejercicio práctico.
-Las competencias salen del análisis del puesto (los must-have primero). Un recruiter screen no es una entrevista
-técnica: las competencias técnicas van a su propia etapa (regla 11 del prompt base).
+Stages: recruiter screen, technical, behavioral/client and work sample.
+Competencies come from the job analysis (must-haves first). A recruiter screen is not a technical
+interview: technical competencies go to their own stage (rule 11 of the base prompt).
 """
 from app.generation.schema import STAGES
 
 DUR = {"biographical": [60, 90], "motivation": [45, 75], "logistics": [20, 45], "behavioral": [60, 120],
        "situational": [60, 120], "technical": [60, 150], "design": [90, 180], "exercise": [1200, 2400]}
 PRIO_RANK = {"must_have": 0, "important": 1, "nice_to_have": 2}
-FOLLOWUP_EST_S = 35       # una repregunta + respuesta corta, promedio estimado (⚠ heurística)
-INTERVIEWER_S = 15        # lo que tarda el entrevistador en preguntar
+FOLLOWUP_EST_S = 35       # one follow-up + short answer, estimated average (⚠ heuristic)
+INTERVIEWER_S = 15        # how long the interviewer takes to ask
 
 
 def _slot(stage, n, formats, competency, label, priority, purpose, req_ids=(), evidence_mode=None, duration=None,
@@ -39,7 +39,7 @@ def _sorted(reqs):
 
 
 def _best_evidence(evidence: list[dict], reqs: list[dict]) -> list[str]:
-    """La experiencia del CV con más tecnologías en común con los requisitos técnicos (para la pregunta de proyecto)."""
+    """The CV experience sharing the most technologies with the technical requirements (for the project question)."""
     terms = {w.lower() for r in reqs for w in (r.get("text", "") + " " + r.get("competency", "")).replace("_", " ").split() if len(w) > 2}
     scored = []
     for e in evidence:
@@ -51,21 +51,21 @@ def _best_evidence(evidence: list[dict], reqs: list[dict]) -> list[str]:
 
 
 def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> list[dict]:
-    """Devuelve las etapas con sus slots. `requirements` ya tienen id (R1…), kind, competency, priority y coverage."""
+    """Returns the stages with their slots. `requirements` already carry id (R1…), kind, competency, priority and coverage."""
     reqs = _sorted(requirements)
     tech = [r for r in reqs if r.get("kind") == "technical"]
     soft = [r for r in reqs if r.get("kind") == "soft"]
     exp = [r for r in reqs if r.get("kind") == "experience"]
     if analysis.get("is_technical") and not tech:
-        # Avisos que solo dicen "N años de React/Node" (sin requisitos técnicos aparte): la tecnología de esos
-        # requisitos de experiencia también se evalúa en la etapa técnica (caso c13 del dataset de evals).
+        # Postings that only say "N years of React/Node" (no separate technical requirements): the technology in
+        # those experience requirements is also assessed in the technical stage (case c13 of the evals dataset).
         tech = [{**r, "kind": "technical", "competency": r["competency"].removesuffix("_experience") or r["competency"]}
                 for r in exp]
     technical = bool(analysis.get("is_technical")) and bool(tech)
     stages = []
 
-    # --- A. Recruiter screen (15–20 min): trayectoria, motivación, experiencia vs. requisito, un ejemplo de entrega,
-    #        logística al final. El inglés se comprueba de forma natural en toda la etapa si el rol lo pide.
+    # --- A. Recruiter screen (15–20 min): background, motivation, experience vs. requirement, one delivery example,
+    #        logistics at the end. English is checked naturally throughout the stage if the role requires it.
     st = "recruiter_screen"
     rs = [_slot(st, 1, ["biographical"], "career_narrative", "Trayectoria relevante y síntesis", "must_have",
                 "Recorrido relevante para ESTE rol, contribución propia y concisión", evidence_mode="past_behavior"),
@@ -90,7 +90,7 @@ def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> lis
                     "compensación (rango y moneda) y superposición horaria. No puntúa", followups=2))
     stages.append({"stage": st, "slots": rs, "english_check": bool(analysis.get("english_required"))})
 
-    # --- B. Técnica (35–45 min): un must-have técnico por pregunta + profundización en un proyecto del CV.
+    # --- B. Technical (35–45 min): one technical must-have per question + a deep dive into a CV project.
     if technical:
         st = "technical_screen"
         ts, seen = [], set()
@@ -111,7 +111,7 @@ def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> lis
                             evidence_mode="past_behavior", evidence_ids=best, followups=3))
         stages.append({"stage": st, "slots": ts, "english_check": bool(analysis.get("english_required"))})
 
-    # --- C. Conductual / cliente (25–30 min): entrega, bug difícil, decisión con datos, ambigüedad y comunicación.
+    # --- C. Behavioral / client (25–30 min): delivery, hard bug, data-driven decision, ambiguity and communication.
     st = "behavioral_client"
     bs = [_slot(st, 1, ["behavioral"], "ownership_delivery", "Ownership y entrega de punta a punta", "must_have",
                 "Algo que llevó de requisitos a producción: qué construyó en persona, decisiones y cómo verificó",
@@ -138,7 +138,7 @@ def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> lis
                         evidence_mode="past_behavior", followups=2))
     stages.append({"stage": st, "slots": bs, "english_check": bool(analysis.get("english_required"))})
 
-    # --- D. Ejercicio práctico: tareas parecidas al trabajo real (OPM, work samples).
+    # --- D. Work sample: tasks resembling the real job (OPM, work samples).
     if technical:
         st = "work_sample"
         ws = []
@@ -156,7 +156,7 @@ def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> lis
     for s in stages:
         label, lo, hi = STAGES[s["stage"]]
         s.update(label=label, minutes=[lo, hi], est_minutes=estimate_minutes(s["slots"]))
-        # recortar lo de menor prioridad si se pasa del tiempo (nunca la logística)
+        # trim the lowest priority when over time (never logistics)
         while s["stage"] != "work_sample" and s["est_minutes"] > hi and len(s["slots"]) > 3:
             drop = max((x for x in s["slots"] if "logistics" not in x["formats"]),
                        key=lambda x: (PRIO_RANK[x["priority"]], x["slot_id"]))
@@ -166,12 +166,12 @@ def build(analysis: dict, requirements: list[dict], evidence: list[dict]) -> lis
 
 
 def coverage(stages: list[dict], requirements: list[dict], questions: list[dict]) -> dict:
-    """¿Cada must-have quedó evaluado por al menos una pregunta? (matriz de cobertura)."""
+    """Is every must-have assessed by at least one question? (coverage matrix)."""
     by_stage: dict[str, set] = {}
     for q in questions:
         for r in q.get("source_refs", []):
             by_stage.setdefault(r, set()).add(q.get("stage"))
-    # el idioma no se pregunta: se comprueba de forma natural en las etapas marcadas con english_check
+    # language isn't asked about: it's checked naturally in the stages marked english_check
     english_stages = sorted(s["stage"] for s in stages if s.get("english_check"))
     for r in requirements:
         if r.get("kind") == "language" and english_stages:
@@ -184,7 +184,7 @@ def coverage(stages: list[dict], requirements: list[dict], questions: list[dict]
 
 
 def sync(blueprints: list[dict], questions: list[dict]) -> list[dict]:
-    """Etapas a partir del banco actual (tras editar preguntas, o para postulaciones viejas sin blueprint)."""
+    """Stages from the current bank (after editing questions, or for old applications without a blueprint)."""
     by = {b["stage"]: b for b in blueprints or []}
     out = []
     for stage, (label, lo, hi) in STAGES.items():

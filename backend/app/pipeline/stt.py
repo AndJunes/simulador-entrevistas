@@ -1,8 +1,8 @@
-"""STT local: Whisper large-v3-turbo con MLX. El audio no sale de la máquina.
+"""Local STT: Whisper large-v3-turbo with MLX. Audio never leaves the machine.
 
-- Modelo fijado al commit auditado y verificado por hash la primera vez que se carga.
-- Pista de muletillas + glosario del CV: sin ella Whisper "limpia" los "eh"/"um".
-- Un candado serializa el uso de la GPU (MLX).
+- Model pinned to the audited commit and hash-verified on first load.
+- Filler hint + CV glossary: without it Whisper "cleans up" the "eh"/"um".
+- A lock serializes GPU (MLX) usage.
 """
 import hashlib
 import threading
@@ -47,5 +47,5 @@ def transcribe(wav: str, lang: str, glossary: list[str]) -> dict:
 
 
 def warmup() -> None:
-    """Carga y verifica el modelo al arrancar, para que la primera respuesta no espere."""
+    """Loads and verifies the model at startup so the first answer doesn't wait."""
     model_path()

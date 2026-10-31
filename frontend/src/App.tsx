@@ -24,7 +24,7 @@ const SessionView = lazy(() => import("./pages/SessionView"))
 export default function App() {
   const { pathname } = useLocation()
   const immersive = pathname.endsWith("/videollamada")
-  const workspace = pathname.startsWith("/p/")   // la postulación arma su propio layout (sidebar + contenido)
+  const workspace = pathname.startsWith("/p/")   // the application builds its own layout (sidebar + content)
 
   return (
     <div className="min-h-svh bg-background text-foreground">
@@ -83,7 +83,7 @@ const THEMES: { v: ThemePref; label: string; icon: typeof SunIcon }[] = [
   { v: "light", label: "Tema claro", icon: SunIcon }, { v: "dark", label: "Tema oscuro", icon: MoonIcon }, { v: "system", label: "Tema del sistema", icon: MonitorIcon },
 ]
 
-/** Claro por defecto; oscuro y "como el sistema" opcionales. */
+/** Light by default; dark and "match the system" optional. */
 function ThemeToggle() {
   const [t, setT] = useState<ThemePref>(readTheme)
   return (

@@ -3,9 +3,9 @@ import manifest from "@/assets/illustrations/manifest.json"
 import { cn } from "@/lib/utils"
 
 /**
- * Ilustraciones unDraw recoloreadas al teal de marca (scripts/illustrations.py). Reglas:
- * decorativas (alt="" + aria-hidden, WCAG 1.1.1) · como máximo una por pantalla · nunca en el bloque del siguiente
- * paso (ceguera a banners) ni mientras grabás o escribís · width/height reales para no mover el layout (CLS).
+ * unDraw illustrations recolored to the brand teal (scripts/illustrations.py). Rules:
+ * decorative (alt="" + aria-hidden, WCAG 1.1.1) · at most one per screen · never in the next-step
+ * block (banner blindness) nor while recording or writing · real width/height to avoid layout shift (CLS).
  */
 const urls = import.meta.glob("../assets/illustrations/*.webp", { eager: true, query: "?url", import: "default" }) as Record<string, string>
 const SRC: Record<string, string> = Object.fromEntries(Object.entries(urls).map(([k, v]) => [k.split("/").pop()!.replace(".webp", ""), v]))
@@ -22,7 +22,7 @@ export function Illustration({ name, className, eager }: { name: IllustrationNam
   )
 }
 
-/** Estado vacío / espera / éxito: una ilustración + un título que dice qué pasa + qué hacer. */
+/** Empty / waiting / success state: an illustration + a title saying what's happening + what to do. */
 export function EmptyState({ name, title, children, action, className }: {
   name: IllustrationName; title: string; children?: React.ReactNode; action?: React.ReactNode; className?: string
 }) {
@@ -42,7 +42,7 @@ const EVIDENCE = {
   gap: { label: "Sin evidencia", icon: CircleIcon, cls: "bg-none-bg text-none" },
 } as const
 
-/** Estado de evidencia: icono + texto + color (nunca solo color, WCAG 1.4.1). Describe el CV, no a la persona. */
+/** Evidence status: icon + text + color (never color alone, WCAG 1.4.1). Describes the CV, not the person. */
 export function EvidenceStatus({ coverage, className }: { coverage?: "strong" | "partial" | "gap"; className?: string }) {
   if (!coverage) return null
   const e = EVIDENCE[coverage]

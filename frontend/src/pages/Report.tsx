@@ -174,7 +174,7 @@ function TurnBlock({ t, lang, interviewer }: { t: ReportTurn; lang: Lang; interv
   )
 }
 
-/** Cada repregunta con su respuesta, y la marca "¿te sirvió o fue redundante?" (métrica de calidad del entrevistador). */
+/** Each follow-up with its answer, and the "helpful or redundant?" flag (interviewer quality metric). */
 function FollowupItem({ f }: { f: NonNullable<ReportTurn["followups"]>[number] }) {
   const qc = useQueryClient()
   const [flag, setFlag] = useState(f.flag)

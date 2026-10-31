@@ -1,6 +1,6 @@
-"""Métricas de calidad del sistema: del producto (base de datos) y de los evals (evals/results).
+"""System quality metrics: from the product (database) and from the evals (evals/results).
 
-No es una nota de la persona: mide si el GENERADOR, el ENTREVISTADOR y el EVALUADOR hacen bien su trabajo.
+Not a grade for the person: it measures whether the GENERATOR, the INTERVIEWER and the EVALUATOR do their job well.
 """
 import json
 import statistics
@@ -45,7 +45,7 @@ def summary(application_id: str | None = None) -> dict:
         mode_of = {x.id: x.mode for x in sessions}
         stage_of = {x.id: (x.settings or {}).get("stage") for x in sessions}
 
-        # --- generador
+        # --- generator
         qs = [normalize_question(q, i) for a in apps for i, q in enumerate(a.questions or [])]
         issues = [i for q in qs for i in q["validation"]["issues"]]
         reports = [a.generation_report or {} for a in apps if (a.generation_report or {}).get("version") == "v2"]
@@ -64,7 +64,7 @@ def summary(application_id: str | None = None) -> dict:
             "cost_usd": round(sum(r.get("cost_usd", 0) for r in reports), 3),
         }
 
-        # --- entrevistador (repreguntas)
+        # --- interviewer (follow-ups)
         mock_main = [t for t in turns if mode_of.get(t.session_id) in ("mock", "videocall") and not t.is_followup
                      and t.question_type != "closing"]
         decisions = [d for t in mock_main for d in (t.extra or {}).get("decisions", [])]
@@ -79,7 +79,7 @@ def summary(application_id: str | None = None) -> dict:
             "flagged": len(flagged), "max_per_question": max(per_q.values()) if per_q else 0,
         }
 
-        # --- evaluador y feedback
+        # --- evaluator and feedback
         evald = [t for t in turns if t.evaluation and t.evaluation.get("ok")]
         evs = [t.evaluation["evaluation"] for t in evald]
         rated = [t for t in turns if t.feedback_rating in (1, -1)]
@@ -100,7 +100,7 @@ def summary(application_id: str | None = None) -> dict:
             "retry_competency_delta": round(statistics.mean(deltas), 2) if deltas else None, "retries": len(deltas),
         }
 
-        # --- cobertura de competencias por sesión (simulacros)
+        # --- per-session competency coverage (mock interviews)
         cover = []
         app_q = {a.id: {q["id"]: q for q in (normalize_question(x, i) for i, x in enumerate(a.questions or []))} for a in apps}
         for x in sessions:
@@ -110,7 +110,7 @@ def summary(application_id: str | None = None) -> dict:
             asked = {t.question_id for t in turns if t.session_id == x.id and not t.is_followup}
             bank = app_q.get(x.application_id, {})
             must = [qid for qid in plan if bank.get(qid, {}).get("priority") == "must_have"]
-            if plan and asked:   # las sesiones sin ninguna respuesta (abiertas y abandonadas) no cuentan
+            if plan and asked:   # sessions with no answers (opened and abandoned) don't count
                 cover.append({"session_id": x.id, "stage": stage_of.get(x.id), "planned": len(plan),
                               "answered_pct": _pct(len([p for p in plan if p in asked]), len(plan)),
                               "must_have_answered_pct": _pct(len([p for p in must if p in asked]), len(must))})

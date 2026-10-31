@@ -12,9 +12,9 @@ const CONF_ORDER = { alta: 0, media: 1, baja: 2 } as const
 const CONF_TONE = { alta: "mint", media: "warn", baja: "soft" } as const
 
 /**
- * Empresa y puesto: lo que sabemos (con su fuente) y lo que falta confirmar (preguntas para el reclutador).
- * La única fuente es el aviso que cargaste: no se agrega conocimiento externo. La confianza la estima la IA al leer
- * el aviso, así que se rotula como estimación, no como hecho.
+ * Company and role: what we know (with its source) and what's left to confirm (questions for the recruiter).
+ * The only source is the posting you loaded: no outside knowledge is added. Confidence is estimated while reading
+ * the posting, so it's labeled as an estimate, not a fact.
  */
 export default function Company() {
   const appId = useAppId()

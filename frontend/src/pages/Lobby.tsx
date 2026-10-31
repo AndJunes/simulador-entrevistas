@@ -101,13 +101,13 @@ export default function Lobby() {
   const isMock = mode === "mock" || mode === "videocall"
   const modes = MODES.filter((m) => m.id !== "exercise" || hasExercises)
 
-  // la prueba de micrófono se cierra al salir del panel
+  // the mic test closes on leaving the panel
   useEffect(() => () => mic.release(), [mic.release])   // eslint-disable-line react-hooks/exhaustive-deps
 
   async function enter() {
     if (isMock && stage && stage.stage !== settings.stage) set("stage", stage.stage)
     if (mode !== "exercise" && !settings.devFile && !mic.stream) {
-      const s = await mic.request()   // confirma el permiso
+      const s = await mic.request()   // confirms the permission
       if (!s) return
     }
     mic.release()
@@ -120,7 +120,7 @@ export default function Lobby() {
       <PageHeader eyebrow="Entrenamiento" title="Practicá a tu manera."
         intro="Elegí una sesión y empezá. Las pistas y los resultados se muestran según la modalidad, para que puedas concentrarte en responder." />
 
-      {/* Modos: radiogroup accesible, tarjeta entera clicable, estado visible por borde + check + texto */}
+      {/* Modes: accessible radiogroup, whole card clickable, state visible via border + check + text */}
       <section aria-labelledby="modo-h">
         <h2 id="modo-h" className="sr-only">Modo de práctica</h2>
         <RadioGroup value={mode} onValueChange={(v) => setMode(v as Mode)} className="grid gap-3.5 min-[561px]:grid-cols-2" aria-labelledby="modo-h">
@@ -201,7 +201,7 @@ export default function Lobby() {
           </Collapsible>
         </section>
 
-        {/* Micrófono: pantalla previa al permiso (NN/g). El ejercicio es escrito: no lo necesita. */}
+        {/* Microphone: pre-permission screen (NN/g). The exercise is written: it doesn't need it. */}
         {mode !== "exercise" && <section aria-labelledby="mic" className="flex flex-col gap-4 rounded-card border bg-card p-5">
           <h2 id="mic" className="flex items-center gap-2 text-[17px] font-bold tracking-[-0.03em]"><MicIcon className="size-4" /> Micrófono</h2>
           {settings.devFile ? (
@@ -246,7 +246,7 @@ export default function Lobby() {
   )
 }
 
-/** Banco de preguntas: búsqueda local sobre las preguntas reales; cada una abre la práctica de esa pregunta. */
+/** Question bank: local search over the real questions; each one opens practice for that question. */
 function QuestionBank() {
   const appId = useAppId()
   const ctx = useAppContext()
@@ -300,7 +300,7 @@ function VoiceControls({ volume, rate, lang, onVolume, onRate }: {
       const text = lang === "es" ? "Hola, así suena el entrevistador. Si está muy fuerte, bajá el volumen." : "Hi, this is how the interviewer sounds. If it's too loud, turn the volume down."
       const { audio_url } = await api.tts(text, lang, "interviewer")
       await playUrl(audio_url).done
-    } catch { /* sin voz disponible */ }
+    } catch { /* no voice available */ }
     setTesting(false)
   }
   return (

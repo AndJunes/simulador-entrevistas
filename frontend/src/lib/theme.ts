@@ -1,5 +1,5 @@
-// Tema: claro por defecto (Piepenbrock vía NN/g: con visión normal el claro rinde mejor, sobre todo con letra chica);
-// oscuro opcional. Se recuerda en este navegador (comodidad, no dato crítico).
+// Theme: light by default (Piepenbrock via NN/g: with normal vision light performs better, especially with small type);
+// dark optional. Remembered in this browser (convenience, not critical data).
 export type ThemePref = "light" | "dark" | "system"
 const KEY = "simulador.theme"
 const media = typeof window !== "undefined" ? window.matchMedia("(prefers-color-scheme: dark)") : null
@@ -13,7 +13,7 @@ export function applyTheme(pref: ThemePref = readTheme()) {
   document.documentElement.style.colorScheme = dark ? "dark" : "light"
 }
 export function setTheme(pref: ThemePref) {
-  try { localStorage.setItem(KEY, pref) } catch { /* sin almacenamiento */ }
+  try { localStorage.setItem(KEY, pref) } catch { /* storage unavailable */ }
   applyTheme(pref)
 }
 media?.addEventListener("change", () => readTheme() === "system" && applyTheme("system"))

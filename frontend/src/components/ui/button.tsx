@@ -18,7 +18,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
-        // Kit de rediseño: oscuro = acción principal fuera del hero; lima SOLO sobre fondo oscuro; ghost = secundaria
+        // Redesign kit: dark = primary action outside the hero; lime ONLY on a dark background; ghost = secondary
         dark: "bg-ink text-ink-foreground hover:-translate-y-px hover:bg-ink/90 dark:ring-1 dark:ring-white/20",
         lime: "bg-lime font-extrabold text-ink shadow-[0_5px_0_rgba(0,0,0,.07)] hover:-translate-y-px focus-visible:outline-lime",
         soft: "border-border bg-card text-foreground hover:-translate-y-px hover:border-primary/50",

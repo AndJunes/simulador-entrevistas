@@ -1,15 +1,15 @@
-"""Grafo del simulacro (LangGraph). Una entrevista de UNA etapa (recruiter, técnica o conductual/cliente):
+"""Mock-interview graph (LangGraph). A ONE-stage interview (recruiter, technical, or behavioral/client):
 
-  ask ──► listen (interrupt: espera tu respuesta) ──► decide ──┬─► repregunta ──► listen   (0–3 por pregunta)
-   ▲                                                           ├─► ask (siguiente pregunta)
-   └───────────────────────────────────────────────────────────┴─► closing ──► listen ──► wrap ──► END
+  ask ──► listen (interrupt: waits for your answer) ──► decide ──┬─► follow-up ──► listen   (0–3 per question)
+   ▲                                                             ├─► ask (next question)
+   └─────────────────────────────────────────────────────────────┴─► closing ──► listen ──► wrap ──► END
 
-- Las frases del entrevistador son plantillas (rápidas y predecibles); solo la repregunta la genera un LLM.
-- Repreguntas adaptativas: hasta `followup_policy.max_followups` por pregunta, una a la vez,
-  solo si falta evidencia que la pregunta busca; si ya está cubierta, se registra que no hacía falta.
-- Cada pregunta tiene un HILO (respuestas + evidencia cubierta/faltante) que se pasa como contexto estructurado.
-- Idioma por pregunta: en modo "mixto" arranca en español y pasa a inglés a mitad de la entrevista.
-- El entrevistador es un personaje genérico ("Recruiter · <empresa>"), no una persona real.
+- Interviewer lines are templates (fast and predictable); only the follow-up is LLM-generated.
+- Adaptive follow-ups: up to `followup_policy.max_followups` per question, one at a time,
+  only when evidence the question seeks is missing; if already covered, it records that none was needed.
+- Each question has a THREAD (answers + covered/missing evidence) passed as structured context.
+- Per-question language: in "mix" mode it starts in Spanish and switches to English mid-interview.
+- The interviewer is a generic persona ("Recruiter · <company>"), not a real person.
 """
 from operator import add
 from typing import Annotated, TypedDict
@@ -52,17 +52,17 @@ SWITCH_EN = "Let's switch to English for the next part, since it's part of the d
 
 class InterviewState(TypedDict, total=False):
     session_id: str
-    application_id: str                 # de qué postulación salen CV, puesto y preguntas
+    application_id: str                 # the application the CV, job and questions come from
     lang: str                           # es | en | mix
     stage: str
     minutes: int
     plan: list[dict]                    # [{qid, lang}]
     idx: int
     threads: dict                       # qid → {answers, covered, missing, followups, decisions, closed}
-    pending: dict                       # pregunta que se está respondiendo
-    say: str                            # lo próximo que dice el entrevistador
-    log: Annotated[list[dict], add]     # transcripción de la conversación
-    closed: list[str]                   # hilos cerrados en el último paso (para evaluarlos en segundo plano)
+    pending: dict                       # question currently being answered
+    say: str                            # the interviewer's next line
+    log: Annotated[list[dict], add]     # conversation transcript
+    closed: list[str]                   # threads closed in the last step (to evaluate in the background)
     finished: bool
 
 
@@ -207,7 +207,7 @@ def decide_followup(q: dict, thread: dict, lang: str) -> FollowupDecision | None
                                                                                 lang_name=lang_name)},
                            {"role": "user", "content": user}], FollowupDecision, "low")
         return d
-    except Exception:  # noqa: BLE001  (si falla, se sigue con la próxima pregunta)
+    except Exception:  # noqa: BLE001  (on failure, move on to the next question)
         return None
 
 

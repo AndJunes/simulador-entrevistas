@@ -3,9 +3,9 @@ import type { Transcript, Word } from "./api"
 const norm = (w: string) => w.toLowerCase().replace(/[^\p{L}\p{N}%']/gu, "")
 
 /**
- * Palabras de una respuesta. La voz trae marcas de tiempo por palabra (STT); una respuesta escrita, o un informe que
- * solo guarda el texto, no: en ese caso se tokeniza el texto para poder ubicar las citas igual. `timed` indica si los
- * índices sirven para métricas que dependen del tiempo (pausas, muletillas, baja confianza).
+ * Words of an answer. Voice brings per-word timestamps (STT); a written answer, or a report that
+ * only stores the text, doesn't: then the text is tokenized so quotes can still be anchored. `timed` says whether the
+ * indices work for time-dependent metrics (pauses, fillers, low confidence).
  */
 export function answerWords(t?: Transcript | null): { words: Word[]; timed: boolean } {
   if (t?.words?.length) return { words: t.words, timed: true }
@@ -13,7 +13,7 @@ export function answerWords(t?: Transcript | null): { words: Word[]; timed: bool
   return { words, timed: false }
 }
 
-/** Ubica una cita del evaluador en la respuesta: coincidencia exacta y, si no, por las primeras 3 palabras. */
+/** Locates an evaluator quote in the answer: exact match, else by the first 3 words. */
 export function anchor(words: { word: string }[], quote: string): [number, number] | null {
   const W = words.map((w) => norm(w.word))
   const Q = quote.split(/\s+/).map(norm).filter(Boolean)

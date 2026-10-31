@@ -1,4 +1,4 @@
-// Cliente de la API (proxy /api → FastAPI). Tipos alineados con backend/app.
+// API client (proxy /api → FastAPI). Types aligned with backend/app.
 
 export type Lang = "es" | "en"
 export type QType = "star" | "screening" | "closing" | "technical" | "logistics" | "exercise"
@@ -13,7 +13,7 @@ export interface ExerciseSpec { brief: string; deliverable: string; criteria: st
 export interface FollowupPolicy { triggers: { if_missing: string; ask: string }[]; max_followups: number; skip_if_covered: boolean }
 export interface Hints { structure: string; cv_examples: string[]; watch_out: string }
 
-/** Una pregunta del banco. En la vista de simulacro (view=mock) los campos privados no vienen. */
+/** A bank question. In the mock view (view=mock) the private fields are omitted. */
 export interface Question {
   id: string
   text_es: string
@@ -29,7 +29,7 @@ export interface Question {
   duration: [number, number]
   pitch: boolean
   followup: boolean
-  // privados (coach / editor)
+  // private (coach / editor)
   guidance?: string
   hints?: Hints
   objective?: string
@@ -147,7 +147,7 @@ export interface EvaluationBody {
   model_answer: string
   spoken_summary: string
   confidence: "alta" | "media" | "baja"
-  // evaluación explicable (las evaluaciones viejas no los tienen)
+  // explainable evaluation (old evaluations lack these)
   competency?: CompetencyScore
   secondary_competencies?: CompetencyScore[]
   evidence_check?: EvidenceCheck[]
@@ -280,7 +280,7 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(path, init)
   if (!r.ok) {
     let detail = r.statusText
-    try { detail = (await r.json()).detail ?? detail } catch { /* sin cuerpo */ }
+    try { detail = (await r.json()).detail ?? detail } catch { /* no body */ }
     throw new Error(detail)
   }
   return r.json() as Promise<T>
@@ -289,7 +289,7 @@ const json = (body: unknown): RequestInit => ({ method: "POST", headers: { "Cont
 
 export const api = {
   health: () => req<{ ok: boolean; rag: unknown; stt: string }>("/api/health"),
-  // postulaciones
+  // applications
   ingest: (kind: "cv" | "job", input: { file?: File; text?: string; url?: string }) => {
     const fd = new FormData()
     fd.append("kind", kind)
@@ -344,7 +344,7 @@ export const api = {
   progress: (appId?: string) => req<{ days: ProgressDay[]; labels: Record<string, string>; competency_labels?: Record<string, string> }>(`/api/progress${appId ? `?application_id=${appId}` : ""}`),
 }
 
-/** Sigue un canal SSE de etapas. Devuelve una función para cerrar. */
+/** Follows a stage SSE channel. Returns a function to close it. */
 export function followStages(url: string, onEvent: (e: StageEvent) => void): () => void {
   const es = new EventSource(url)
   es.addEventListener("stage", (m) => {
@@ -352,7 +352,7 @@ export function followStages(url: string, onEvent: (e: StageEvent) => void): () 
     onEvent(e)
     if (e.stage === "done" || e.stage === "error" || e.stage === "cancelled") es.close()
   })
-  es.onerror = () => { /* EventSource reintenta solo; el backend reenvía la historia del canal */ }
+  es.onerror = () => { /* EventSource retries on its own; the backend resends the channel history */ }
   return () => es.close()
 }
 

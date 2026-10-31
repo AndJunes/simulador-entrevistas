@@ -1,5 +1,5 @@
-"""Audio: conversión a WAV 16 kHz, detección de voz/silencio con umbral RELATIVO y recorte
-del silencio final (evita alucinaciones de Whisper)."""
+"""Audio: conversion to 16 kHz WAV, speech/silence detection with a RELATIVE threshold, and
+trailing-silence trimming (prevents Whisper hallucinations)."""
 import subprocess
 import wave
 from pathlib import Path
@@ -10,7 +10,7 @@ FRAME_S = 0.02
 
 
 def to_wav16k(src: str, dst: str) -> str:
-    """Cualquier audio (webm/opus del navegador, m4a, wav) → WAV mono 16 kHz 16-bit."""
+    """Any audio (browser webm/opus, m4a, wav) → mono 16 kHz 16-bit WAV."""
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-ac", "1", "-ar", "16000",
                     "-sample_fmt", "s16", dst], check=True)
     return dst
@@ -58,11 +58,11 @@ def _open(mask, k):
 
 def speech_mask(db: np.ndarray) -> tuple[np.ndarray, float]:
     floor, speech = np.percentile(db, 10), np.percentile(db, 90)
-    if speech - floor < 6:            # no hay contraste: todo silencio (o todo ruido)
+    if speech - floor < 6:            # no contrast: all silence (or all noise)
         return np.zeros_like(db, dtype=bool), float(floor)
     thr = floor + 0.35 * (speech - floor)
-    mask = _close(db > thr, int(0.12 / FRAME_S))     # huecos < 120 ms (oclusivas)
-    mask = _open(mask, int(0.25 / FRAME_S))           # ruidos < 250 ms (clics, teclado)
+    mask = _close(db > thr, int(0.12 / FRAME_S))     # gaps < 120 ms (plosives)
+    mask = _open(mask, int(0.25 / FRAME_S))           # noises < 250 ms (clicks, keyboard)
     return mask, float(thr)
 
 
@@ -98,7 +98,7 @@ def trim_trailing(path: str, out_path: str, info: dict, keep_s: float = 0.4) -> 
 
 
 def delete_quietly(*paths: str | None) -> None:
-    """El audio se borra al terminar el turno."""
+    """Audio is deleted when the turn finishes."""
     for p in paths:
         if p:
             Path(p).unlink(missing_ok=True)

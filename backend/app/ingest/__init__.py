@@ -1,9 +1,9 @@
-"""Ingesta de CV y puesto → Markdown legible.
+"""CV and job ingestion → readable Markdown.
 
-Formatos: PDF (pdftotext), DOC/DOCX/RTF/ODT/HTML/TXT (textutil, nativo de macOS), MD/TXT directo,
-imágenes (modelo multimodal) y URL (descarga con protección anti-SSRF). Sin dependencias nuevas.
+Formats: PDF (pdftotext), DOC/DOCX/RTF/ODT/HTML/TXT (textutil, native to macOS), MD/TXT as-is,
+images (multimodal model) and URL (download with anti-SSRF protection). No new dependencies.
 
-Después, un LLM SOLO reformatea a Markdown: no agrega, no quita, no resume, no traduce.
+Afterwards, an LLM ONLY reformats to Markdown: no additions, removals, summarizing or translating.
 """
 import base64
 import ipaddress
@@ -30,20 +30,20 @@ ALLOWED_EXT = TEXT_EXT | TEXTUTIL_EXT | set(IMAGE_EXT) | {"pdf"}
 
 
 class IngestError(ValueError):
-    """Error presentable al usuario (en español)."""
+    """User-presentable error (in Spanish)."""
 
 
-# ----------------------------------------------------------------------------- archivos
+# ----------------------------------------------------------------------------- files
 
 def _run(cmd: list[str], timeout: int = 60) -> str:
-    r = subprocess.run(cmd, capture_output=True, timeout=timeout)   # lista de argumentos: sin shell
+    r = subprocess.run(cmd, capture_output=True, timeout=timeout)   # argument list: no shell
     if r.returncode != 0:
         raise IngestError("No pudimos leer el archivo. ¿Está dañado o protegido con contraseña?")
     return r.stdout.decode("utf-8", errors="replace")
 
 
 def extract_file(data: bytes, filename: str) -> tuple[str, dict]:
-    """Devuelve (texto o marcador de imagen, info). Para imágenes devuelve '' y la imagen en info['image']."""
+    """Returns (text or image marker, info). For images returns '' with the image in info['image']."""
     if len(data) > MAX_FILE_BYTES:
         raise IngestError("El archivo supera los 10 MB.")
     ext = Path(filename or "").suffix.lower().lstrip(".")
@@ -117,7 +117,7 @@ def fetch_url(url: str) -> tuple[str, dict]:
         raise IngestError("El link tiene que empezar con http:// o https://")
     current = url.strip()
     with httpx.Client(timeout=15, follow_redirects=False, headers={"User-Agent": "Mozilla/5.0 (simulador-entrevistas)"}) as c:
-        for _ in range(4):   # redirecciones manuales: cada destino se vuelve a validar
+        for _ in range(4):   # manual redirects: every destination is re-validated
             host = urlparse(current).hostname or ""
             _assert_public_host(host)
             with c.stream("GET", current) as r:

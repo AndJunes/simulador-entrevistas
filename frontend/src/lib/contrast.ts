@@ -1,5 +1,5 @@
-/** Contraste WCAG 2.x (luminancia relativa) para colores OKLCH o hex. Lo usa el test de tokens (contrast.test.ts). */
-type RGB = [number, number, number]   // sRGB codificado 0–1
+/** WCAG 2.x contrast (relative luminance) for OKLCH or hex colors. Used by the token test (contrast.test.ts). */
+type RGB = [number, number, number]   // encoded sRGB 0–1
 
 export function oklchToSrgb(L: number, C: number, h: number): RGB {
   const a = C * Math.cos((h * Math.PI) / 180), b = C * Math.sin((h * Math.PI) / 180)
@@ -34,7 +34,7 @@ export function contrast(a: string, b: string): number {
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
 }
 
-/** Lee las variables `--x: valor;` de un bloque CSS (`:root {…}` o `.dark {…}`). */
+/** Reads the `--x: value;` variables of a CSS block (`:root {…}` or `.dark {…}`). */
 export function readTokens(css: string, selector: ":root" | ".dark"): Record<string, string> {
   const out: Record<string, string> = {}
   const re = new RegExp(`(^|\\n)${selector.replace(".", "\\.")}\\s*\\{([^}]*)\\}`, "g")

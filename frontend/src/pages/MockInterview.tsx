@@ -48,7 +48,7 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
   const [announce, setAnnounce] = useState("")
   const [reportProg, setReportProg] = useState<{ stage: string; done: number; total: number }>({ stage: "", done: 0, total: 0 })
   const [file, setFile] = useState<File | null>(null)
-  // UN solo <audio> para toda la entrevista: así el AnalyserNode se conecta una vez (indicador con la voz real)
+  // ONE <audio> for the whole interview: the AnalyserNode connects once (indicator driven by the real voice)
   const [voiceEl] = useState(() => new Audio())
   const audioRef = useRef<HTMLAudioElement | null>(voiceEl)
   const [paused, setPaused] = useState(false)
@@ -56,7 +56,7 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
   const [writing, setWriting] = useState(false)
   const [draft, setDraft] = useState("")
   const voiceLevel = useOutputLevel(voiceEl, phase === "speaking" && !paused)
-  const sidRef = useRef<string | null>(null)   // lo leen callbacks memorizados (evita un sid viejo)
+  const sidRef = useRef<string | null>(null)   // read by memoized callbacks (avoids a stale sid)
   const stopRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
 
   const listen = useCallback(async () => {
     if (settings.devFile) { setPhase("listening"); return }
-    const st = await mic.request()   // se abre solo para responder
+    const st = await mic.request()   // opens only to answer
     if (!st) { toast.error("No pudimos abrir el micrófono."); return }
     chime()
     rec.start(st)
@@ -95,8 +95,8 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
   }, [settings.voice, settings.autostart, listen])
 
   async function begin() {
-    if (!settings.devFile && !(await mic.request())) return   // confirma el permiso…
-    mic.release()                                             // …y lo cierra hasta que te toque responder
+    if (!settings.devFile && !(await mic.request())) return   // confirms the permission…
+    mic.release()                                             // …and closes it until it's your turn to answer
     setPhase("starting")
     try {
       const r = await api.startMock(appId, mode, mockLang, stageInfo?.stage ?? "recruiter_screen", { showQuestion: showQ, voice: settings.voice })
@@ -156,7 +156,7 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
     }
   }
 
-  // WCAG 1.4.2: la voz que suena sola se puede pausar/reanudar y repetir, con controles PRIMERO en la barra
+  // WCAG 1.4.2: auto-playing voice can be paused/resumed and replayed, with controls FIRST in the bar
   const pauseVoice = () => { voiceEl.pause(); setPaused(true) }
   const resumeVoice = () => { voiceEl.play().catch(() => {}); setPaused(false) }
   const repeatVoice = () => { voiceEl.currentTime = 0; voiceEl.play().catch(() => {}); setPaused(false) }
@@ -173,7 +173,7 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
   const nQ = stageInfo?.question_ids.length ?? 0
   const langLabel = mockLang === "mix" ? "Español → inglés" : mockLang === "es" ? "Español" : "Inglés"
 
-  // Intro (qué vas a encontrar)
+  // Intro (what you'll find)
   if (phase === "intro" || phase === "starting") {
     return (
       <div className={cn(mode === "videocall" && "mx-auto max-w-3xl px-4 py-10")}>
@@ -229,7 +229,7 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
     )
   }
 
-  // Entrevista en curso
+  // Interview in progress
   const speaking = phase === "speaking"
   const listening = phase === "listening"
   const thinking = phase === "thinking"
@@ -278,7 +278,7 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
     )
   }
 
-  // simulacro con pregunta visible
+  // mock with the question visible
   return (
     <div className="flex flex-col gap-6">
       <LiveRegion message={announce} />
@@ -341,7 +341,7 @@ export default function MockInterview({ mode }: { mode: "mock" | "videocall" }) 
   )
 }
 
-/** Avatar con halo que sigue la amplitud REAL de la voz (amp 0–1). Con movimiento reducido: halo fijo, sin escala. */
+/** Avatar with a halo following the REAL voice amplitude (amp 0–1). With reduced motion: fixed halo, no scaling. */
 function Avatar({ initials, active, amp = 0, size = "md" }: { initials: string; active?: boolean; amp?: number; size?: "md" | "lg" }) {
   const d = size === "lg" ? "size-28 text-3xl" : "size-14 text-lg"
   const still = prefersReducedMotion()

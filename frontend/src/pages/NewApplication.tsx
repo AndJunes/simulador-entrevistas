@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { api, appPath, followStages } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-// Pipeline por etapas: cada etapa es una tarea separada y verificable.
+// Staged pipeline: each stage is a separate, verifiable task.
 const GEN_STAGES = [
   { key: "analyzing_job", label: "Analizando el puesto: requisitos, prioridad y competencias" },
   { key: "extracting_evidence", label: "Extrayendo la evidencia de tu CV (profesional, proyectos, hackathons)" },
@@ -22,7 +22,7 @@ const GEN_STAGES = [
   { key: "saving", label: "Guardando la postulación" },
 ]
 const ORDER = GEN_STAGES.map((g) => g.key)
-const ETA: Record<string, number> = { analyzing_job: 30, mapping: 15, generating: 75, validating: 35 }   // segundos por etapa, medidos con una postulación real
+const ETA: Record<string, number> = { analyzing_job: 30, mapping: 15, generating: 75, validating: 35 }   // seconds per stage, measured on a real application
 
 export default function NewApplication() {
   const [job, setJob] = useState<DocValue | null>(null)

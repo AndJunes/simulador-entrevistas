@@ -1,12 +1,12 @@
-"""Vocabulario de las preguntas y normalización compatible con el formato viejo.
+"""Question vocabulary and normalization compatible with the old format.
 
-Una pregunta no es solo `texto + guía`: lleva etapa, formato, competencia, prioridad, evidencia esperada (privada),
-política de repreguntas y pistas para el modo coach. `type` (screening | star | technical | logistics | exercise)
-se DERIVA del formato y elige la rúbrica del evaluador.
+A question is not just `text + guidance`: it carries stage, format, competency, priority, (private) expected
+evidence, follow-up policy and coach-mode hints. `type` (screening | star | technical | logistics | exercise)
+is DERIVED from the format and picks the evaluator's rubric.
 """
 import re
 
-STAGES = {   # etapa: (etiqueta, minutos mín, minutos máx)
+STAGES = {   # stage: (label, min minutes, max minutes)
     "recruiter_screen": ("Recruiter screen", 15, 20),
     "technical_screen": ("Entrevista técnica", 35, 45),
     "behavioral_client": ("Conductual y cliente", 25, 30),
@@ -38,7 +38,7 @@ DEFAULT_COMPETENCY = {"biographical": ("career_narrative", "Trayectoria y sínte
                       "debugging": ("debugging", "Debugging"), "design": ("system_design", "Diseño"),
                       "exercise": ("work_sample", "Ejercicio práctico")}
 
-# Lo que el entrevistador sabe y vos no: nunca sale en el modo simulacro.
+# What the interviewer knows and you don't: never exposed in mock mode.
 PRIVATE_FIELDS = ("guidance", "hints", "objective", "relevance", "expected_evidence", "weak_indicators",
                   "followup_policy", "candidate_evidence_ids", "known_gaps", "source_refs", "validation", "confidence",
                   "approved", "secondary_competencies")
@@ -73,10 +73,10 @@ def _stage_for(fmt: str) -> str:
 
 
 def normalize_question(q: dict, i: int) -> dict:
-    """Completa y valida una pregunta. Acepta el formato viejo (type/pitch/followup/guidance) y el nuevo."""
+    """Fills in and validates a question. Accepts the old format (type/pitch/followup/guidance) and the new one."""
     fmt = q.get("format") if q.get("format") in FORMATS else _legacy_format(q)
     qtype = FORMAT_TYPE[fmt]
-    # formato viejo (sin `format`): el banco era UN screening con historias STAR adentro → una sola etapa
+    # old format (no `format`): the bank was ONE screening with STAR stories inside → a single stage
     stage = q.get("stage") if q.get("stage") in STAGES else ("recruiter_screen" if "format" not in q else _stage_for(fmt))
     dur = q.get("duration") if isinstance(q.get("duration"), list) and len(q["duration"]) == 2 else DEFAULT_DURATION[qtype]
     text_en = (q.get("text_en") or q.get("text_es") or "").strip()
@@ -85,7 +85,7 @@ def normalize_question(q: dict, i: int) -> dict:
     comp_label = (q.get("competency_label") or "").strip() or (comp_label if comp_id == DEFAULT_COMPETENCY[fmt][0] else comp_id.replace("_", " "))
 
     pol = q.get("followup_policy") if isinstance(q.get("followup_policy"), dict) else None
-    if pol is None:   # formato viejo: followup bool
+    if pol is None:   # old format: followup bool
         legacy_ok = q.get("followup", True) is not False
         pol = {"triggers": [], "max_followups": 2 if legacy_ok else 0, "skip_if_covered": True}
     max_f = 0 if fmt == "exercise" else max(0, min(3, int(pol.get("max_followups") or 0)))
@@ -130,11 +130,11 @@ def normalize_question(q: dict, i: int) -> dict:
         "confidence": float(q["confidence"]) if isinstance(q.get("confidence"), (int, float)) else None,
         "validation": {"score": val.get("score"), "issues": _list(val.get("issues")), "critic": val.get("critic")},
         "approved": bool(q.get("approved")),
-        # compatibilidad con el código y el front anteriores
+        # compatibility with the previous code and frontend
         "pitch": fmt == "biographical", "followup": max_f > 0,
     }
 
 
 def public_view(q: dict) -> dict:
-    """La pregunta como la ve el candidato en el simulacro: sin pistas ni evidencia esperada."""
+    """The question as the candidate sees it in the mock interview: no hints or expected evidence."""
     return {k: v for k, v in q.items() if k not in PRIVATE_FIELDS and k != "exercise"}

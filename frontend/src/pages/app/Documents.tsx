@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { api, type Application } from "@/lib/api"
 import { useAppId } from "@/lib/app"
 
-/** CV y puesto de la postulación: ver en Markdown, editar o volver a cargar. */
+/** The application's CV and job: view as Markdown, edit, or reload. */
 export default function Documents() {
   const appId = useAppId()
   const qc = useQueryClient()

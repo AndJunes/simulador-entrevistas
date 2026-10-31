@@ -10,7 +10,7 @@ import { api, appPath } from "@/lib/api"
 import { useAppId } from "@/lib/app"
 import { cn } from "@/lib/utils"
 
-// Navegación principal: 6 áreas en la barra lateral (Tu espacio)
+// Main navigation: 6 areas in the sidebar (Tu espacio)
 const NAV = [
   { to: "", label: "Resumen", icon: HouseIcon, end: true },
   { to: "practicar", label: "Practicar", icon: PlayIcon, also: ["practica", "simulacro", "ejercicio", "preguntas"] },
@@ -19,20 +19,20 @@ const NAV = [
   { to: "empresa", label: "Empresa y puesto", icon: Building2Icon },
   { to: "evidencia", label: "CV y evidencia", icon: FileTextIcon },
 ]
-// Herramientas secundarias, fuera del flujo principal. El banco de preguntas vive dentro de Practicar.
+// Secondary tools, outside the main flow. The question bank lives inside Practicar.
 const UTIL = [{ to: "documentos", label: "Editar CV y aviso" }, { to: "calidad", label: "Avanzado · Calidad del sistema" }]
 const SECTION: Record<string, string> = { "": "Resumen", practicar: "Practicar", practica: "Práctica", simulacro: "Simulacro",
   ejercicio: "Ejercicio", preguntas: "Banco de preguntas", resultados: "Progreso y resultados", informe: "Informe", sesion: "Sesión",
   requisitos: "Requisitos del puesto", evidencia: "CV y evidencia", empresa: "Empresa y puesto", documentos: "CV y aviso", calidad: "Calidad" }
 
-// Encabezado de las secciones utilitarias (las principales arman el suyo con sus acciones)
+// Header for the utility sections (the main ones build their own with their actions)
 const HEAD: Record<string, { eyebrow: string; title: string; intro: string }> = {
   preguntas: { eyebrow: "Practicar", title: "Banco de preguntas.", intro: "Revisá, editá o aprobá las preguntas de cada etapa antes de practicarlas." },
   documentos: { eyebrow: "Tus documentos", title: "CV y aviso.", intro: "El texto del que sale todo el análisis. Si lo cambiás, regenerá las preguntas." },
   calidad: { eyebrow: "Avanzado", title: "Calidad del sistema.", intro: "No mide tu desempeño: mide si las preguntas, las repreguntas y las devoluciones de esta postulación son buenas." },
 }
 
-/** Carpeta de una postulación: barra lateral + contenido. */
+/** An application's folder: sidebar + content. */
 export default function AppWorkspace() {
   const appId = useAppId()
   const { pathname } = useLocation()
@@ -43,12 +43,12 @@ export default function AppWorkspace() {
   const inSession = /\/(practica|simulacro|ejercicio)$/.test(pathname)
   const firstRender = useRef(true)
 
-  // cuando termina de generarse, refrescar el contexto (preguntas nuevas)
+  // when generation finishes, refresh the context (new questions)
   useEffect(() => {
     if (app.data?.status === "ready") qc.invalidateQueries({ queryKey: ["app", appId, "context"] })
   }, [app.data?.status, app.data?.updated_at, appId, qc])
 
-  // Cambio de ruta: título del documento y foco en el h1 de la sección (no en sesiones: ahí va al control principal)
+  // Route change: document title and focus on the section's h1 (not in sessions: there it goes to the main control)
   const sub = pathname.replace(appPath(appId), "").replace(/^\//, "").split("/")[0]
   useEffect(() => {
     if (!app.data) return
@@ -56,7 +56,7 @@ export default function AppWorkspace() {
     if (firstRender.current) { firstRender.current = false; return }
     if (inSession || immersive) return
     let tries = 0
-    const t = setInterval(() => {   // las secciones cargan en diferido: esperar a que exista el h1
+    const t = setInterval(() => {   // sections lazy-load: wait until the h1 exists
       const h = document.querySelector<HTMLElement>("#main h1")
       if (h || ++tries > 30) { clearInterval(t); h?.focus({ preventScroll: true }); window.scrollTo({ top: 0 }) }
     }, 50)
@@ -100,7 +100,7 @@ export default function AppWorkspace() {
     </>
   )
 
-  // Sesiones: pantalla completa, sin barra lateral (foco en responder)
+  // Sessions: full screen, no sidebar (focus on answering)
   if (inSession) return <div className="px-4 py-3 lg:px-6">{crumb}{status}<Outlet /></div>
 
   return (

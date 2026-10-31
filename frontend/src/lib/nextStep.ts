@@ -1,9 +1,9 @@
 import type { Application, Priority, ProgressDay, Question, Requirement } from "./api"
 
 /**
- * "Tu próximo paso": regla DETERMINISTA con datos reales (sin porcentajes inventados). Gana el primer nivel que aplica.
- *  N0 estado de la postulación · N1 primer requisito sin practicar (obligatorios sin evidencia primero) ·
- *  N2 competencia obligatoria con última nota ≤3 · N3 ejercicio pendiente · N4 simulacro de la primera etapa.
+ * "Your next step": DETERMINISTIC rule using real data (no made-up percentages). The first applicable level wins.
+ *  N0 application status · N1 first unpracticed requirement (must-haves without evidence first) ·
+ *  N2 must-have competency with last score ≤3 · N3 pending exercise · N4 mock interview of the first stage.
  */
 export type NextStep =
   | { level: "N0"; kind: "generating" | "error" | "no_questions"; title: string; reason: string }
@@ -11,7 +11,7 @@ export type NextStep =
   | { level: "N3"; kind: "exercise"; title: string; reason: string; qid: string; minutes: number }
   | { level: "N4"; kind: "mock"; title: string; reason: string; stage: string; minutes: number }
 
-export const FEEDBACK_S = 40   // devolución medida (~40 s)
+export const FEEDBACK_S = 40   // measured feedback time (~40 s)
 
 const PRIO: Record<Priority, number> = { must_have: 0, important: 1, nice_to_have: 2 }
 const COV: Record<string, number> = { gap: 0, partial: 1, strong: 2 }
@@ -20,7 +20,7 @@ export const PRIORITY_SHORT: Record<Priority, string> = { must_have: "Obligatori
 
 const rnum = (r: Requirement) => Number(r.id.slice(1)) || 99
 
-/** Orden de lectura de los requisitos (posición serial): obligatorio sin evidencia → parcial → fuerte → importante → deseable. */
+/** Reading order of requirements (serial position): must-have without evidence → partial → strong → important → nice-to-have. */
 export function requirementOrder(a: Requirement, b: Requirement): number {
   const pa = PRIO[a.priority ?? "important"], pb = PRIO[b.priority ?? "important"]
   if (pa !== pb) return pa - pb
@@ -29,7 +29,7 @@ export function requirementOrder(a: Requirement, b: Requirement): number {
   return rnum(a) - rnum(b)
 }
 
-/** Competencias con al menos una evaluación y su última nota. */
+/** Competencies with at least one evaluation, and their latest score. */
 export function practiceState(days: ProgressDay[]): { practiced: Set<string>; last: Record<string, number> } {
   const practiced = new Set<string>(), last: Record<string, number> = {}
   for (const d of days) for (const [k, v] of Object.entries(d.competencies ?? {})) {

@@ -1,4 +1,4 @@
-"""Esquema inicial: sesiones, turnos y chunks del corpus con pgvector.
+"""Initial schema: sessions, turns and corpus chunks with pgvector.
 
 Revision ID: 0001
 """

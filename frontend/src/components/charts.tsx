@@ -3,8 +3,8 @@ import { useState } from "react"
 const fmt = (v: number) => (Math.abs(v) >= 10 ? Math.round(v) : Math.round(v * 10) / 10)
 
 /**
- * Gráfico de línea de UNA serie (small multiple). Guía dataviz: una serie → sin leyenda (el título la nombra),
- * un solo tono (primary), línea 2px, marcadores ≥8px, grilla recesiva, tooltip al pasar el mouse o con foco.
+ * Single-series line chart (small multiple). Dataviz guide: one series → no legend (the title names it),
+ * one tone (primary), 2px line, markers ≥8px, recessive grid, tooltip on hover or focus.
  */
 export function LineSmall({ title, unit, points, yMin, yMax, hint }: {
   title: string; unit?: string; points: { x: string; y: number | null }[]; yMin?: number; yMax?: number; hint?: string
@@ -21,7 +21,7 @@ export function LineSmall({ title, unit, points, yMin, yMax, hint }: {
     )
   }
   let lo = yMin ?? Math.min(...vals), hi = yMax ?? Math.max(...vals)
-  if (hi === lo) { lo -= 1; hi += 1 }   // un solo punto: escala con margen, no colapsada
+  if (hi === lo) { lo -= 1; hi += 1 }   // a single point: scale with margin, not collapsed
   const span = hi - lo
   const x = (i: number) => P.l + (points.length === 1 ? (W - P.l - P.r) / 2 : (i * (W - P.l - P.r)) / (points.length - 1))
   const y = (v: number) => P.t + (1 - (v - lo) / span) * (H - P.t - P.b)

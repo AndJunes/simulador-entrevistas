@@ -1,18 +1,18 @@
 import { useCallback, useState } from "react"
 import type { Lang, Stage } from "./api"
 
-// Preferencias del panel de selección. Se recuerdan en este navegador (comodidad, no datos críticos).
+// Selection-panel preferences. Remembered in this browser (convenience, not critical data).
 export interface Settings {
   lang: Lang
-  voice: boolean          // el entrevistador habla y el resumen se reproduce
-  autostart: boolean      // la grabación arranca sola al terminar la pregunta (mide la latencia)
-  showQuestion: boolean   // videollamada: pregunta visible u oculta
-  stage: Stage            // simulacro: qué etapa de la entrevista (recruiter, técnica, conductual/cliente)
-  mixed: boolean          // simulacro: arranca en español y pasa a inglés (si el rol lo pide)
-  hintsOff: boolean       // práctica: sin pistas antes de responder
-  devFile: boolean        // modo prueba: usar un archivo de audio en lugar del micrófono
-  voiceVolume: number     // 0–1 · volumen de la voz (protege los parlantes)
-  voiceRate: number       // velocidad de la voz (sin cambiar el tono)
+  voice: boolean          // the interviewer speaks and the summary is played
+  autostart: boolean      // recording starts automatically when the question ends (measures latency)
+  showQuestion: boolean   // video call: question visible or hidden
+  stage: Stage            // mock: which interview stage (recruiter, technical, behavioral/client)
+  mixed: boolean          // mock: starts in Spanish and switches to English (if the role requires it)
+  hintsOff: boolean       // practice: no hints before answering
+  devFile: boolean        // test mode: use an audio file instead of the microphone
+  voiceVolume: number     // 0–1 · voice volume (protects the speakers)
+  voiceRate: number       // voice rate (without changing pitch)
 }
 
 const DEFAULTS: Settings = { lang: "es", voice: true, autostart: true, showQuestion: false, stage: "recruiter_screen", mixed: false, hintsOff: false, devFile: false, voiceVolume: 0.7, voiceRate: 1.15 }
@@ -32,7 +32,7 @@ export function useSettings() {
   const set = useCallback(<K extends keyof Settings>(k: K, v: Settings[K]) => {
     setState((s) => {
       const next = { ...s, [k]: v }
-      try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* almacenamiento no disponible */ }
+      try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* storage unavailable */ }
       return next
     })
   }, [])

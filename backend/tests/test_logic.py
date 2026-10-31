@@ -1,4 +1,4 @@
-"""Lógica del evaluador, del modo en blanco, del corpus y del grafo del simulacro (sin red: proveedores falsos)."""
+"""Logic of the evaluator, blank mode, corpus and mock-interview graph (no network: fake providers)."""
 import pytest
 
 from app.interview import graph as g
@@ -33,7 +33,7 @@ def test_normalize_reorders_cleans_and_requires_all():
     assert [c.id for c in out.criteria] == ids
     assert out.job_requirements_addressed == ["R1", "R4"] and out.job_requirements_missed == ["R7"]
     assert out.improvements == [] and out.strengths == ["a"]
-    # solo los criterios opcionales pueden quedar "no aplica"
+    # only optional criteria may end up "not applicable"
     na = {c.id for c in out.criteria if not c.applicable}
     assert na == {"learning", "decisions_tradeoffs"} and "star_action" not in na
     with pytest.raises(ValueError):
@@ -69,7 +69,7 @@ def test_rubrics_match_app_criteria():
             assert r, f"falta rúbrica {t}/{lang}"
             for cid in evaluator.criteria_for(t, lang):
                 assert f"## {cid}" in r, f"{cid} no aparece en {t}/{lang}"
-            assert "Junior Backend Engineer (Node.js/Rust)" not in r   # rúbricas genéricas, no de una postulación
+            assert "Junior Backend Engineer (Node.js/Rust)" not in r   # generic rubrics, not tied to one application
 
 
 def test_corpus_chunks_have_metadata():
@@ -80,7 +80,7 @@ def test_corpus_chunks_have_metadata():
             assert c["interview_type"] in {"star", "screening", "comun", "technical", "work_sample"} and c["language"] in {"es", "en"}
 
 
-# ----------------------------------------------------------------------------- postulación de prueba (sin DB)
+# ----------------------------------------------------------------------------- test application (no DB)
 
 BANK = [
     {"id": "Q1", "type": "screening", "text_es": "Contame un poco sobre vos.", "text_en": "Tell me about yourself",
@@ -108,7 +108,7 @@ def test_app_context_api():
 
 def test_glossary_uses_word_boundaries():
     c = fake_ctx()
-    c.cv_md = "Trabajé con Google Cloud"   # "Go" no debe aparecer por estar dentro de "Google"
+    c.cv_md = "Trabajé con Google Cloud"   # "Go" must not appear just for being inside "Google"
     assert "Go" not in c.glossary()
 
 
@@ -147,13 +147,13 @@ def test_mock_graph_without_followups(monkeypatch):
     assert "proyecto de backend" in said[1]
     assert said[-1] == g.T["es"]["closing"]
     assert final["finished"] and len(said) == 4
-    # se registró que no hacía falta repreguntar (salto justificado)
+    # it recorded that no follow-up was needed (justified skip)
     assert st["threads"]["Q1"]["decisions"][0]["ask"] is False and st["threads"]["Q1"]["closed"]
 
 
 def test_mock_graph_up_to_max_followups(monkeypatch):
     said, final, st = _run(monkeypatch, lambda q, th, lang: _decision(True))
-    # Q1, Q4 y Q8 (formato viejo → máx. 2 c/u, la logística vieja sin repregunta = 0): 1+2 + 1+2 + 1 + cierre
+    # Q1, Q4 and Q8 (old format → max 2 each, old logistics with no follow-up = 0): 1+2 + 1+2 + 1 + closing
     assert said.count("¿Y el número?") == 4 and len(said) == 8 and final["finished"]
     assert st["threads"]["Q4"]["followups"] == 2 and len(st["threads"]["Q4"]["answers"]) == 3
 
@@ -163,7 +163,7 @@ def test_mock_graph_followup_stops_when_covered(monkeypatch):
 
     def decide(q, th, lang):
         calls.append(len(th["answers"]))
-        return _decision(len(th["answers"]) == 1)   # repregunta una vez y después ya está cubierto
+        return _decision(len(th["answers"]) == 1)   # asks one follow-up, then it's already covered
     said, final, st = _run(monkeypatch, decide)
     assert said.count("¿Y el número?") == 2 and st["threads"]["Q4"]["decisions"][-1]["ask"] is False
 

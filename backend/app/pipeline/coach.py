@@ -1,4 +1,4 @@
-"""Modo "me quedé en blanco", con RAG sobre pgvector."""
+"""Mode for "I went blank", with RAG over pgvector."""
 import re
 import time
 

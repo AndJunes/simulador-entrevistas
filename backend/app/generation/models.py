@@ -1,4 +1,4 @@
-"""Esquemas estructurados (JSON estricto) de cada etapa del pipeline de generación."""
+"""Structured schemas (strict JSON) for each stage of the generation pipeline."""
 from typing import Literal
 
 from pydantic import BaseModel
@@ -13,17 +13,17 @@ Format = Literal["biographical", "motivation", "behavioral", "situational", "tec
 # ----------------------------------------------------------------------------- 1. job_analyzer
 
 class JobRequirement(BaseModel):
-    text: str                    # el requisito, en español, breve
+    text: str                    # the requirement, in Spanish, brief
     kind: ReqKind
-    competency: str              # slug en inglés, una competencia (p. ej. async_python, sql_postgres, communication)
-    competency_label: str        # etiqueta en español
+    competency: str              # English slug, one competency (e.g. async_python, sql_postgres, communication)
+    competency_label: str        # Spanish label
     priority: Priority
-    source_quote: str            # cita textual del aviso que lo respalda
+    source_quote: str            # verbatim quote from the posting that backs it
 
 
 class CompanyFact(BaseModel):
-    fact: str                    # en español
-    source_quote: str            # cita textual del texto recibido
+    fact: str                    # in Spanish
+    source_quote: str            # verbatim quote from the received text
     confidence: Literal["alta", "media", "baja"]
 
 
@@ -43,33 +43,33 @@ class JobAnalysis(BaseModel):
     is_technical: bool
     responsibilities: list[str]
     requirements: list[JobRequirement]
-    conditions: list[str]            # modalidad, contrato, horario, ubicación (logística)
+    conditions: list[str]            # modality, contract, schedule, location (logistics)
     english_required: bool
     language_notes: str
     interview: InterviewInfo
     company_facts: list[CompanyFact]
-    listed_questions: list[str]      # preguntas que las notas de preparación ya listan (textuales)
-    ambiguities: list[str]           # datos contradictorios o faltantes del aviso
+    listed_questions: list[str]      # questions the prep notes already list (verbatim)
+    ambiguities: list[str]           # contradictory or missing data in the posting
 
 
 # ----------------------------------------------------------------------------- 2. resume_evidence_extractor
 
 class EvidenceItem(BaseModel):
-    title: str                   # proyecto o puesto
+    title: str                   # project or position
     kind: EvidenceKind
     org: str
-    dates: str                   # tal como figuran ("" si no hay)
-    technologies: list[str]      # SOLO las que el CV asocia a ESTA experiencia
+    dates: str                   # as stated ("" if absent)
+    technologies: list[str]      # ONLY those the CV ties to THIS experience
     responsibilities: list[str]
-    achievements: list[str]      # con números solo si el CV los dice
-    quote: str                   # cita textual del CV
+    achievements: list[str]      # with numbers only if the CV states them
+    quote: str                   # verbatim quote from the CV
 
 
 class ResumeEvidence(BaseModel):
     candidate_name: str
-    professional_summary: str    # tiempo profesional por área, tal como surge de las fechas (sin redondear hacia arriba)
+    professional_summary: str    # professional time by area, as the dates show it (no rounding up)
     evidence: list[EvidenceItem]
-    ambiguities: list[str]       # datos del CV ambiguos → preguntas aclaratorias, no hechos
+    ambiguities: list[str]       # ambiguous CV data → clarifying questions, not facts
 
 
 # ----------------------------------------------------------------------------- 3. evidence_map
@@ -78,13 +78,13 @@ class MapItem(BaseModel):
     req_id: str
     coverage: Literal["strong", "partial", "gap"]
     evidence_ids: list[str]
-    note: str                    # qué demuestra la evidencia (español)
-    gap: str                     # qué falta ("" si nada)
+    note: str                    # what the evidence demonstrates (Spanish)
+    gap: str                     # what's missing ("" if nothing)
 
 
 class EvidenceMap(BaseModel):
     items: list[MapItem]
-    years_vs_competence: str     # años profesionales verificables vs. competencia demostrada, por separado
+    years_vs_competence: str     # verifiable professional years vs. demonstrated competence, separately
 
 
 # ----------------------------------------------------------------------------- 5. question_generator
@@ -105,7 +105,7 @@ class ExerciseSpec(BaseModel):
     deliverable: str
     criteria: list[str]
     constraints: list[str]
-    reference_facts: list[str]   # datos que el entrevistador puede dar si preguntan
+    reference_facts: list[str]   # details the interviewer may disclose if asked
     minutes: int
 
 
@@ -140,18 +140,18 @@ class GenBatch(BaseModel):
     candidates: list[GenQuestion]
 
 
-# ----------------------------------------------------------------------------- 6. question_validator (crítica)
+# ----------------------------------------------------------------------------- 6. question_validator (critique)
 
 class Critique(BaseModel):
-    candidate: int               # índice de la candidata
+    candidate: int               # candidate index
     clarity: int
     single_focus: int
     non_leading: int
     realism: int
     grounding: int
     level_calibration: int
-    issues: list[str]            # en español
-    rewrite_en: str              # "" si no hace falta
+    issues: list[str]            # in Spanish
+    rewrite_en: str              # "" if not needed
     rewrite_es: str
 
 
