@@ -1,4 +1,5 @@
 """Mode for "I went blank", with RAG over pgvector."""
+
 import re
 import time
 
@@ -10,9 +11,9 @@ from app.rag.store import retrieve
 
 BLANK_PATTERNS = {
     "en": r"\b(i don'?t know|i'?m not sure|i forgot|i can'?t remember|no idea|let me think|i'?m blanking|"
-          r"my mind went blank|sorry,? i)\b",
+    r"my mind went blank|sorry,? i)\b",
     "es": r"\b(no s[eé]|no me acuerdo|me olvid[eé]|no tengo idea|me qued[eé] en blanco|d[eé]jame pensar|"
-          r"perd[oó]n,? (es que|no))\b",
+    r"perd[oó]n,? (es que|no))\b",
 }
 
 
@@ -43,8 +44,9 @@ def coach(*, question: dict, language: str, cv: str, job: str, partial_transcrip
     lang_name = "English" if language == "en" else "español"
     retrieved = []
     try:
-        retrieved = retrieve(f"going blank, don't know what to answer: {question['text']}", "comun", language, k=3,
-                             exclude_kinds=()) + retrieve(question["text"], question["type"], language, k=3)
+        retrieved = retrieve(
+            f"going blank, don't know what to answer: {question['text']}", "comun", language, k=3, exclude_kinds=()
+        ) + retrieve(question["text"], question["type"], language, k=3)
     except Exception:  # noqa: BLE001
         pass
     system = f"""You are a calm, practical interview coach. The candidate went blank or doesn't know how to answer
@@ -75,12 +77,21 @@ RULES
 <job>
 {job}
 </job>
-<question type="{question['type']}">{question['text']}</question>
-<what_a_strong_answer_contains>{question['guidance']}</what_a_strong_answer_contains>
+<question type="{question["type"]}">{question["text"]}</question>
+<what_a_strong_answer_contains>{question["guidance"]}</what_a_strong_answer_contains>
 <why_coaching>{reason}</why_coaching>
 <partial_answer>{partial_transcript}</partial_answer>"""
     t0 = time.perf_counter()
-    c, cost = structured(env("LLM_EVALUATOR_MODEL"),
-                         [{"role": "system", "content": system}, {"role": "user", "content": user}], Coaching, "low")
-    return {"coaching": c.model_dump(), "reason": reason, "latency_s": round(time.perf_counter() - t0, 2),
-            "cost_usd": cost, "retrieved_chunks": [x["id"] for x in retrieved]}
+    c, cost = structured(
+        env("LLM_EVALUATOR_MODEL"),
+        [{"role": "system", "content": system}, {"role": "user", "content": user}],
+        Coaching,
+        "low",
+    )
+    return {
+        "coaching": c.model_dump(),
+        "reason": reason,
+        "latency_s": round(time.perf_counter() - t0, 2),
+        "cost_usd": cost,
+        "retrieved_chunks": [x["id"] for x in retrieved],
+    }

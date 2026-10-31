@@ -5,6 +5,7 @@
 - Ambiguous fillers ("like", "bueno"): only counted in filler context.
 - Target ranges: backend/config/form_targets.yaml (with sources) if present; otherwise provisional values.
 """
+
 import re
 from functools import lru_cache
 
@@ -16,28 +17,56 @@ from app.core.config import CONFIG_DIR, env
 # - filled pauses: unambiguous, always counted;
 # - discourse markers: almost always legitimate; flagged only when REPEATED (overuse) and under context rules.
 DEFAULT_FILLERS = {
-    "en": (["um", "uh", "erm", "er", "hmm", "mm", "eh", "em"],     # L2: Spanish ones slip in (K28)
-           ["like", "you know", "i mean", "so", "basically", "actually", "kind of", "sort of"]),
-    "es": (["eh", "em", "ehm", "mmm", "mm"],
-           ["este", "o sea", "bueno", "pues", "entonces", "digamos", "tipo", "como que"]),
+    "en": (
+        ["um", "uh", "erm", "er", "hmm", "mm", "eh", "em"],  # L2: Spanish ones slip in (K28)
+        ["like", "you know", "i mean", "so", "basically", "actually", "kind of", "sort of"],
+    ),
+    "es": (
+        ["eh", "em", "ehm", "mmm", "mm"],
+        ["este", "o sea", "bueno", "pues", "entonces", "digamos", "tipo", "como que"],
+    ),
 }
-MARKER_OVERUSE_MIN = 3   # ⚠ heuristic: a marker counts as a filler if it appears 3+ times in one answer
+MARKER_OVERUSE_MIN = 3  # ⚠ heuristic: a marker counts as a filler if it appears 3+ times in one answer
 NOT_FILLER_BEFORE = {
-    "like": {"i", "you", "we", "they", "would", "i'd", "really", "don't", "didn't", "also", "to", "just", "would've",
-             "looks", "look", "feel", "feels", "things", "something", "anything"},
+    "like": {
+        "i",
+        "you",
+        "we",
+        "they",
+        "would",
+        "i'd",
+        "really",
+        "don't",
+        "didn't",
+        "also",
+        "to",
+        "just",
+        "would've",
+        "looks",
+        "look",
+        "feel",
+        "feels",
+        "things",
+        "something",
+        "anything",
+    },
     "bueno": {"muy", "un", "una", "lo", "más", "tan", "es", "fue", "era", "sea"},
     "tipo": {"el", "un", "este", "ese", "de", "qué", "que", "mismo"},
 }
 NOT_FILLER_AFTER = {"like": {"to", "this", "that", "it", "them"}, "tipo": {"de"}}
 
-DEFAULT_DURATION = {"screening": (45, 90), "star": (60, 90), "closing": (20, 90)}   # ⚠ provisional (prep notes from a real application)
+DEFAULT_DURATION = {
+    "screening": (45, 90),
+    "star": (60, 90),
+    "closing": (20, 90),
+}  # ⚠ provisional (prep notes from a real application)
 
 
 def _clean_tokens(items) -> list[str]:
     out = []
     for i in items:
         t = str(i["token"] if isinstance(i, dict) else i).lower().strip()
-        if t and t == _norm_phrase(t):      # drops "¿no?" and the like: normalized they'd become "no" (false positives)
+        if t and t == _norm_phrase(t):  # drops "¿no?" and the like: normalized they'd become "no" (false positives)
             out.append(t)
     return sorted(set(out), key=lambda x: -len(x))
 
@@ -73,7 +102,11 @@ def duration_target(qtype: str, question: dict | None = None) -> tuple[float, fl
     """Target range: the question's own (set by the application), else form_targets.yaml, else the default."""
     if question and isinstance(question.get("duration"), list) and len(question["duration"]) == 2:
         lo, hi = question["duration"]
-        src = "pregunta" if not question.get("pitch") else (targets().get("duration_s", {}).get("pitch") or {}).get("source")
+        src = (
+            "pregunta"
+            if not question.get("pitch")
+            else (targets().get("duration_s", {}).get("pitch") or {}).get("source")
+        )
         return float(lo), float(hi), src
     t = targets().get("duration_s", {})
     key = "pitch" if question and question.get("pitch") else "behavioral" if qtype == "star" else "screening_other"
@@ -96,7 +129,7 @@ def count_filler(tokens: str, f: str) -> int:
     n = 0
     for pos in hits:
         before = (tokens[:pos].split()[-1:] or [""])[0]
-        after = (tokens[pos + len(f):].split()[:1] or [""])[0]
+        after = (tokens[pos + len(f) :].split()[:1] or [""])[0]
         if before in NOT_FILLER_BEFORE[f] or after in NOT_FILLER_AFTER.get(f, set()):
             continue
         n += 1
@@ -135,13 +168,16 @@ def form_metrics(words: list[dict], vad: dict, lang: str, qtype: str, question: 
     single = {f for f in found if " " not in f}
     for i, w in enumerate(words):
         if _norm(w["word"]) in single:
-            ctx = " " + " ".join(_norm(x["word"]) for x in words[max(0, i - 1): i + 2]) + " "
+            ctx = " " + " ".join(_norm(x["word"]) for x in words[max(0, i - 1) : i + 2]) + " "
             if count_filler(ctx, _norm(w["word"])):
                 filler_idx.append(i)
     reps = re.findall(r"\b(\w+ \w+)\b,? \1\b", " ".join(_norm(w["word"]) for w in words))
     thr = long_pause_s()
-    pauses = [{"at_s": p["start_s"], "dur_s": p["dur_s"]} for p in vad.get("pauses", [])
-              if p["start_s"] >= onset and p["dur_s"] >= thr]
+    pauses = [
+        {"at_s": p["start_s"], "dur_s": p["dur_s"]}
+        for p in vad.get("pauses", [])
+        if p["start_s"] >= onset and p["dur_s"] >= thr
+    ]
     lo, hi, src = duration_target(qtype, question)
     low_thr = float(env("STT_LOW_CONFIDENCE_THRESHOLD", "0.5"))
     return {
@@ -171,13 +207,17 @@ def compare(prev: dict, cur: dict) -> dict:
     """Before/after on retry (Hattie & Timperley: feedback on the change)."""
     keys = ("first_word_latency_s", "speech_duration_s", "wpm", "fillers_per_min")
     pm, cm = prev.get("metrics") or {}, cur.get("metrics") or {}
-    ok = lambda c: c.get("applicable", True)   # noqa: E731  (non-applicable ones aren't compared)
+    ok = lambda c: c.get("applicable", True)  # noqa: E731  (non-applicable ones aren't compared)
     ps = {c["id"]: c["score"] for c in (prev.get("evaluation") or {}).get("criteria", []) if ok(c)}
     cs = {c["id"]: c["score"] for c in (cur.get("evaluation") or {}).get("criteria", []) if ok(c)}
-    pc = ((prev.get("evaluation") or {}).get("competency") or {})
-    cc = ((cur.get("evaluation") or {}).get("competency") or {})
+    pc = (prev.get("evaluation") or {}).get("competency") or {}
+    cc = (cur.get("evaluation") or {}).get("competency") or {}
     out = {"metrics": {k: [pm.get(k), cm.get(k)] for k in keys}, "criteria": {k: [ps.get(k), cs[k]] for k in cs}}
     if cc.get("score"):
-        out["competency"] = {"id": cc.get("id"), "label": cc.get("label"), "scores": [pc.get("score"), cc["score"]],
-                             "levels": [pc.get("evidence_level"), cc.get("evidence_level")]}
+        out["competency"] = {
+            "id": cc.get("id"),
+            "label": cc.get("label"),
+            "scores": [pc.get("score"), cc["score"]],
+            "levels": [pc.get("evidence_level"), cc.get("evidence_level")],
+        }
     return out

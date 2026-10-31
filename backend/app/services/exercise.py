@@ -5,6 +5,7 @@
   isn't specified, it says so and asks to note the assumption. Clarifications are stored and evaluated.
 - Code is NEVER executed: it's evaluated by reading it against the exercise rubric.
 """
+
 import logging
 import threading
 import time
@@ -26,7 +27,7 @@ MAX_CLARIFICATIONS = 8
 
 class Clarification(BaseModel):
     answer: str
-    specified: bool      # false = not in the reference facts: the person must assume and note it
+    specified: bool  # false = not in the reference facts: the person must assume and note it
 
 
 CLARIFY_SYSTEM = """You are the interviewer running a short written work-sample exercise. The candidate asks a
@@ -62,11 +63,17 @@ def clarify(sid: str, qid: str, question: str) -> dict:
     if len(prev) >= MAX_CLARIFICATIONS:
         raise ValueError("llegaste al máximo de aclaraciones para este ejercicio")
     lang_name = "Spanish (rioplatense, voseo)" if lang == "es" else "English"
-    user = (f"<brief>{ex.get('brief', '')}</brief>\n<deliverable>{ex.get('deliverable', '')}</deliverable>\n"
-            f"<constraints>{ex.get('constraints', [])}</constraints>\n<reference_facts>{ex.get('reference_facts', [])}</reference_facts>\n"
-            f"<previous>{prev}</previous>\n<candidate_question>{question}</candidate_question>")
-    c, _ = structured(env("LLM_FAST_MODEL"), [{"role": "system", "content": CLARIFY_SYSTEM.format(lang_name=lang_name)},
-                                              {"role": "user", "content": user}], Clarification, "low")
+    user = (
+        f"<brief>{ex.get('brief', '')}</brief>\n<deliverable>{ex.get('deliverable', '')}</deliverable>\n"
+        f"<constraints>{ex.get('constraints', [])}</constraints>\n<reference_facts>{ex.get('reference_facts', [])}</reference_facts>\n"
+        f"<previous>{prev}</previous>\n<candidate_question>{question}</candidate_question>"
+    )
+    c, _ = structured(
+        env("LLM_FAST_MODEL"),
+        [{"role": "system", "content": CLARIFY_SYSTEM.format(lang_name=lang_name)}, {"role": "user", "content": user}],
+        Clarification,
+        "low",
+    )
     item = {"q": question, "a": c.answer.strip(), "specified": c.specified}
     with db() as s:
         sess = s.get(Session, sid)
@@ -90,9 +97,17 @@ def submit(sid: str, qid: str, text: str, elapsed_s: float | None) -> str:
         sess = s.get(Session, sid)
         lang = sess.lang
         clar = ((sess.settings or {}).get("clarifications") or {}).get(qid, [])
-        t = Turn(session_id=sid, question_id=qid, question_text=(q.get("exercise") or {}).get("brief") or q["text_en"],
-                 question_type="exercise", lang=lang, input_mode="written", status="processing",
-                 transcript={"text": text, "words": []}, extra={"clarifications": clar, "elapsed_s": elapsed_s})
+        t = Turn(
+            session_id=sid,
+            question_id=qid,
+            question_text=(q.get("exercise") or {}).get("brief") or q["text_en"],
+            question_type="exercise",
+            lang=lang,
+            input_mode="written",
+            status="processing",
+            transcript={"text": text, "words": []},
+            extra={"clarifications": clar, "elapsed_s": elapsed_s},
+        )
         s.add(t)
         s.flush()
         tid = t.id
@@ -109,11 +124,24 @@ def _evaluate(tid: str, app_id: str, qid: str, lang: str, text: str, clar: list)
         events.emit(tid, "received")
         events.emit(tid, "evaluating", eta_s=40)
         t0 = time.perf_counter()
-        brief = (f"{ex.get('brief', '')}\nEntregable: {ex.get('deliverable', '')}\nCriterios: {ex.get('criteria', [])}\n"
-                 f"Restricciones: {ex.get('constraints', [])}")
-        ev = evaluator.evaluate(interview_type="exercise", language=lang, question=brief, question_guidance=q["guidance"],
-                                transcript=text, delivery={}, low_conf_words=[], cv=ctx.cv(), job=ctx.job(),
-                                question_meta=q, evidence=ctx.evidence_digest(), clarifications=clar)
+        brief = (
+            f"{ex.get('brief', '')}\nEntregable: {ex.get('deliverable', '')}\nCriterios: {ex.get('criteria', [])}\n"
+            f"Restricciones: {ex.get('constraints', [])}"
+        )
+        ev = evaluator.evaluate(
+            interview_type="exercise",
+            language=lang,
+            question=brief,
+            question_guidance=q["guidance"],
+            transcript=text,
+            delivery={},
+            low_conf_words=[],
+            cv=ctx.cv(),
+            job=ctx.job(),
+            question_meta=q,
+            evidence=ctx.evidence_digest(),
+            clarifications=clar,
+        )
         with db() as s:
             t = s.get(Turn, tid)
             if ev["ok"]:
@@ -122,7 +150,9 @@ def _evaluate(tid: str, app_id: str, qid: str, lang: str, text: str, clar: list)
             else:
                 t.status, t.error = "error", ev["error"]
         if not ev["ok"]:
-            events.emit(tid, "error", message="La evaluación no está disponible ahora. Probá de nuevo.", code="eval_failed")
+            events.emit(
+                tid, "error", message="La evaluación no está disponible ahora. Probá de nuevo.", code="eval_failed"
+            )
             return
         events.emit(tid, "evaluated", evaluation=ev, comparison=None)
         try:

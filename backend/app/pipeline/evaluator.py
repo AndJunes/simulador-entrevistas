@@ -9,6 +9,7 @@ Explainable evaluation:
 - checklist against the question's (private) expected evidence: demonstrated / partial / not demonstrated;
 - logistics doesn't score as a competency.
 """
+
 import json
 import re
 import time
@@ -23,38 +24,98 @@ from app.rag.corpus import rubric_text
 from app.rag.store import retrieve
 
 CRITERIA = {
-    "star": ["star_situation", "star_task", "star_action", "star_result", "decisions_tradeoffs", "learning",
-             "relevance", "conciseness", "job_alignment", "cv_consistency"],
-    "screening": ["clarity_structure", "conciseness", "motivation_company_knowledge",
-                  "experience_role_alignment", "communication_english", "professionalism_logistics"],
+    "star": [
+        "star_situation",
+        "star_task",
+        "star_action",
+        "star_result",
+        "decisions_tradeoffs",
+        "learning",
+        "relevance",
+        "conciseness",
+        "job_alignment",
+        "cv_consistency",
+    ],
+    "screening": [
+        "clarity_structure",
+        "conciseness",
+        "motivation_company_knowledge",
+        "experience_role_alignment",
+        "communication_english",
+        "professionalism_logistics",
+    ],
     "logistics": ["clarity_structure", "conciseness", "professionalism_logistics", "communication_english"],
-    "technical": ["technical_correctness", "reasoning", "edge_cases_failures", "testing_validation",
-                  "security_permissions", "tradeoffs_operability", "clarity_structure", "directness",
-                  "clarifies_assumptions", "uncertainty_transparency"],
-    "exercise": ["approach", "technical_correctness", "edge_cases_failures", "testing_validation",
-                 "tradeoffs_operability", "written_communication"],
+    "technical": [
+        "technical_correctness",
+        "reasoning",
+        "edge_cases_failures",
+        "testing_validation",
+        "security_permissions",
+        "tradeoffs_operability",
+        "clarity_structure",
+        "directness",
+        "clarifies_assumptions",
+        "uncertainty_transparency",
+    ],
+    "exercise": [
+        "approach",
+        "technical_correctness",
+        "edge_cases_failures",
+        "testing_validation",
+        "tradeoffs_operability",
+        "written_communication",
+    ],
 }
-RUBRIC_DOC = {"star": "star", "screening": "screening", "logistics": "screening", "closing": "screening",
-              "technical": "technical", "exercise": "work_sample"}
+RUBRIC_DOC = {
+    "star": "star",
+    "screening": "screening",
+    "logistics": "screening",
+    "closing": "screening",
+    "technical": "technical",
+    "exercise": "work_sample",
+}
 # criteria that may not apply to a given question (the rest always apply)
-OPTIONAL = {"learning", "motivation_company_knowledge", "professionalism_logistics", "security_permissions",
-            "clarifies_assumptions", "testing_validation", "edge_cases_failures", "written_communication",
-            "decisions_tradeoffs", "tradeoffs_operability"}
-NOT_SCORED_TYPES = {"logistics", "closing"}   # don't score as a competency
+OPTIONAL = {
+    "learning",
+    "motivation_company_knowledge",
+    "professionalism_logistics",
+    "security_permissions",
+    "clarifies_assumptions",
+    "testing_validation",
+    "edge_cases_failures",
+    "written_communication",
+    "decisions_tradeoffs",
+    "tradeoffs_operability",
+}
+NOT_SCORED_TYPES = {"logistics", "closing"}  # don't score as a competency
 
 CRITERIA_LABELS = {
-    "star_situation": "Situación", "star_task": "Tarea", "star_action": "Acción", "star_result": "Resultado",
-    "decisions_tradeoffs": "Decisiones y trade-offs", "learning": "Aprendizaje",
-    "relevance": "Relevancia", "conciseness": "Concisión", "job_alignment": "Alineación con el puesto",
-    "cv_consistency": "Coherencia con el CV", "clarity_structure": "Claridad y estructura",
+    "star_situation": "Situación",
+    "star_task": "Tarea",
+    "star_action": "Acción",
+    "star_result": "Resultado",
+    "decisions_tradeoffs": "Decisiones y trade-offs",
+    "learning": "Aprendizaje",
+    "relevance": "Relevancia",
+    "conciseness": "Concisión",
+    "job_alignment": "Alineación con el puesto",
+    "cv_consistency": "Coherencia con el CV",
+    "clarity_structure": "Claridad y estructura",
     "motivation_company_knowledge": "Motivación y conocimiento de la empresa",
-    "experience_role_alignment": "Experiencia vs. el rol", "communication_english": "Comunicación en inglés",
-    "communication_clarity": "Claridad oral", "professionalism_logistics": "Profesionalismo y logística",
-    "technical_correctness": "Corrección técnica", "reasoning": "Razonamiento",
-    "edge_cases_failures": "Casos límite y fallos", "testing_validation": "Testing y validación",
-    "security_permissions": "Seguridad y permisos", "tradeoffs_operability": "Trade-offs y operación",
-    "directness": "Respuesta directa", "clarifies_assumptions": "Aclara supuestos",
-    "uncertainty_transparency": "Transparencia sobre lo que no sabe", "approach": "Enfoque",
+    "experience_role_alignment": "Experiencia vs. el rol",
+    "communication_english": "Comunicación en inglés",
+    "communication_clarity": "Claridad oral",
+    "professionalism_logistics": "Profesionalismo y logística",
+    "technical_correctness": "Corrección técnica",
+    "reasoning": "Razonamiento",
+    "edge_cases_failures": "Casos límite y fallos",
+    "testing_validation": "Testing y validación",
+    "security_permissions": "Seguridad y permisos",
+    "tradeoffs_operability": "Trade-offs y operación",
+    "directness": "Respuesta directa",
+    "clarifies_assumptions": "Aclara supuestos",
+    "uncertainty_transparency": "Transparencia sobre lo que no sabe",
+    "approach": "Enfoque",
     "written_communication": "Comunicación escrita",
 }
 
@@ -66,11 +127,11 @@ ANCHORS = """| 1 Insuficiente | No responde al objetivo, contiene errores centra
 
 FALLBACK_RUBRIC = {  # ⚠ provisional: only when knowledge/<rubric>/<language>/rubrica.md is missing
     "star": "STAR: situation, task, action (first person), result (quantified), decisions_tradeoffs, learning, "
-            "relevance, conciseness, job_alignment, cv_consistency.",
+    "relevance, conciseness, job_alignment, cv_consistency.",
     "screening": "Recruiter screening: clear structure, concise, motivation and company knowledge, experience aligned "
-                 "to role, clear communication (intelligibility, NOT accent), professional handling of logistics.",
+    "to role, clear communication (intelligibility, NOT accent), professional handling of logistics.",
     "technical": "Technical: correctness, reasoning, edge cases and failures, testing, security, trade-offs, clarity, "
-                 "directness, assumptions, transparency about uncertainty.",
+    "directness, assumptions, transparency about uncertainty.",
     "work_sample": "Work sample: approach, correctness, edge cases, testing, trade-offs, written communication.",
 }
 
@@ -90,19 +151,19 @@ def criteria_for(interview_type: str, language: str) -> list[str]:
 # ("compiled grammar is too large"). Ranges and values are validated in normalize().
 class Criterion(BaseModel):
     id: str
-    applicable: bool      # false = doesn't apply to this question (neither scored nor averaged)
-    score: int            # 1–5
+    applicable: bool  # false = doesn't apply to this question (neither scored nor averaged)
+    score: int  # 1–5
     evidence_quote: str
     justification: str
-    missing: str          # what was missing to reach a 5 (one sentence; "" if already 5)
-    ideal: str            # the 5/5 version of THIS part, ready to say
+    missing: str  # what was missing to reach a 5 (one sentence; "" if already 5)
+    ideal: str  # the 5/5 version of THIS part, ready to say
 
 
 class Annotation(BaseModel):
-    quote: str            # LITERAL fragment of the transcript (the comment's anchor)
+    quote: str  # LITERAL fragment of the transcript (the comment's anchor)
     kind: Literal["bien", "mejorar"]
     comment: str
-    fix: str              # how to say it better ("" when kind is "bien")
+    fix: str  # how to say it better ("" when kind is "bien")
 
 
 class Improvement(BaseModel):
@@ -113,22 +174,22 @@ class Improvement(BaseModel):
 
 class EvidenceCheck(BaseModel):
     expected: str
-    status: str           # demostrado | parcial | no_demostrado
+    status: str  # demostrado | parcial | no_demostrado
     quote: str
 
 
 class ExperienceClaim(BaseModel):
     claim: str
-    level: str            # profesional | proyecto | academico_hackathon | teorico | ninguna
+    level: str  # profesional | proyecto | academico_hackathon | teorico | ninguna
     quote: str
 
 
 class CompetencyScore(BaseModel):
     id: str
     label: str
-    score: int            # 1–5
-    evidence_level: str   # profesional | proyecto | academico_hackathon | teorico | ninguna
-    confidence: str       # alta | media | baja
+    score: int  # 1–5
+    evidence_level: str  # profesional | proyecto | academico_hackathon | teorico | ninguna
+    confidence: str  # alta | media | baja
     rationale: str
 
 
@@ -170,15 +231,38 @@ def _rubric(interview_type: str, language: str) -> tuple[str, bool]:
 def _q_meta(meta: dict | None) -> str:
     if not meta:
         return ""
-    keys = {"format": "format", "stage": "stage", "primary_competency": "primary_competency",
-            "competency_label": "competency_label", "evidence_mode": "evidence_mode", "difficulty": "difficulty",
-            "objective": "objective", "expected_evidence": "expected_evidence", "weak_indicators": "weak_indicators",
-            "known_gaps": "known_gaps", "source_refs": "requirement_ids"}
+    keys = {
+        "format": "format",
+        "stage": "stage",
+        "primary_competency": "primary_competency",
+        "competency_label": "competency_label",
+        "evidence_mode": "evidence_mode",
+        "difficulty": "difficulty",
+        "objective": "objective",
+        "expected_evidence": "expected_evidence",
+        "weak_indicators": "weak_indicators",
+        "known_gaps": "known_gaps",
+        "source_refs": "requirement_ids",
+    }
     return json.dumps({v: meta.get(k) for k, v in keys.items() if meta.get(k)}, ensure_ascii=False)
 
 
-def build_messages(*, interview_type, language, question, question_guidance, transcript, delivery, low_conf_words,
-                   cv, job, question_meta=None, thread=None, evidence="", clarifications=None):
+def build_messages(
+    *,
+    interview_type,
+    language,
+    question,
+    question_guidance,
+    transcript,
+    delivery,
+    low_conf_words,
+    cv,
+    job,
+    question_meta=None,
+    thread=None,
+    evidence="",
+    clarifications=None,
+):
     rubric, sourced = _rubric(interview_type, language)
     t = RUBRIC_DOC[interview_type]
     retrieved = []
@@ -298,7 +382,11 @@ RULES
 <transcript>
 {transcript}
 </transcript>"""
-    return [{"role": "system", "content": system}, {"role": "user", "content": user}], [c["id"] for c in retrieved], sourced
+    return (
+        [{"role": "system", "content": system}, {"role": "user", "content": user}],
+        [c["id"] for c in retrieved],
+        sourced,
+    )
 
 
 def _req_ids(xs: list[str]) -> list[str]:
@@ -310,7 +398,16 @@ def _clamp(x: int) -> int:
 
 
 def _one_of(v: str, options, default: str) -> str:
-    v = (v or "").strip().lower().replace("-", "_").replace(" ", "_").replace("á", "a").replace("é", "e").replace("ó", "o")
+    v = (
+        (v or "")
+        .strip()
+        .lower()
+        .replace("-", "_")
+        .replace(" ", "_")
+        .replace("á", "a")
+        .replace("é", "e")
+        .replace("ó", "o")
+    )
     return v if v in options else default
 
 
@@ -320,7 +417,7 @@ def normalize(ev: Evaluation, expected: list[str]) -> Evaluation:
     if missing:
         raise ValueError(f"faltan criterios {missing}; recibidos {list(by_id)}")
     ev.criteria = [by_id[i] for i in expected]
-    for c in ev.criteria:   # only the optional ones may be left out
+    for c in ev.criteria:  # only the optional ones may be left out
         c.score = _clamp(c.score)
         if c.id not in OPTIONAL:
             c.applicable = True
@@ -337,7 +434,9 @@ def normalize(ev: Evaluation, expected: list[str]) -> Evaluation:
     ev.evidence_check = [e for e in ev.evidence_check if e.expected.strip()][:6]
     ev.facts, ev.inferences, ev.not_demonstrated = ev.facts[:4], ev.inferences[:4], ev.not_demonstrated[:4]
     ev.job_requirements_addressed = _req_ids(ev.job_requirements_addressed)
-    ev.job_requirements_missed = [r for r in _req_ids(ev.job_requirements_missed) if r not in ev.job_requirements_addressed]
+    ev.job_requirements_missed = [
+        r for r in _req_ids(ev.job_requirements_missed) if r not in ev.job_requirements_addressed
+    ]
     return ev
 
 
@@ -354,8 +453,9 @@ def evaluate(**kwargs) -> dict:
     for attempt in range(2):  # one retry if the schema doesn't validate
         t0 = time.perf_counter()
         try:
-            ev, cost = structured(env("LLM_EVALUATOR_MODEL"), messages, Evaluation,
-                                  env("LLM_EVALUATOR_REASONING_EFFORT", "medium"))
+            ev, cost = structured(
+                env("LLM_EVALUATOR_MODEL"), messages, Evaluation, env("LLM_EVALUATOR_REASONING_EFFORT", "medium")
+            )
             ev = normalize(ev, expected)
             out = ev.model_dump()
             for c in out["criteria"]:
@@ -364,10 +464,19 @@ def evaluate(**kwargs) -> dict:
             out["competency"]["label"] = meta.get("competency_label") or out["competency"]["label"]
             out["competency"]["scored"] = kwargs["interview_type"] not in NOT_SCORED_TYPES
             # in an exercise the evidence is the task itself (live execution), not previously claimed experience
-            out["competency"]["evidence_source"] = "ejercicio" if kwargs["interview_type"] == "exercise" else "respuesta"
-            return {"ok": True, "evaluation": out, "latency_s": round(time.perf_counter() - t0, 2), "cost_usd": cost,
-                    "retrieved_chunks": chunk_ids, "rubric_sourced": sourced, "model": env("LLM_EVALUATOR_MODEL"),
-                    "attempts": attempt + 1}
+            out["competency"]["evidence_source"] = (
+                "ejercicio" if kwargs["interview_type"] == "exercise" else "respuesta"
+            )
+            return {
+                "ok": True,
+                "evaluation": out,
+                "latency_s": round(time.perf_counter() - t0, 2),
+                "cost_usd": cost,
+                "retrieved_chunks": chunk_ids,
+                "rubric_sourced": sourced,
+                "model": env("LLM_EVALUATOR_MODEL"),
+                "attempts": attempt + 1,
+            }
         except Exception as e:  # noqa: BLE001
             errors.append(str(e)[:300])
     return {"ok": False, "error": " | ".join(errors)}

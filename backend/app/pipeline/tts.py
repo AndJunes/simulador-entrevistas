@@ -4,6 +4,7 @@ Mandatory post-processing: Magpie delivers audio peaking at 0 dBFS (no headroom)
 the speakers. Each audio is normalized with ffmpeg loudnorm to a moderate speech level with a true-peak
 ceiling of -3 dBTP, and stored mono 24 kHz (enough for voice, lighter files).
 """
+
 import hashlib
 import subprocess
 from pathlib import Path
@@ -12,8 +13,8 @@ import httpx
 
 from app.core.config import TMP, TTS_CACHE, env
 
-POSTPROCESS = "loudnorm=I=-20:TP=-3:LRA=11"   # target speech LUFS, max true peak -3 dB
-PROCESS_VERSION = "v2-loudnorm"                # changes the cache key: old (clipped) audio isn't reused
+POSTPROCESS = "loudnorm=I=-20:TP=-3:LRA=11"  # target speech LUFS, max true peak -3 dB
+PROCESS_VERSION = "v2-loudnorm"  # changes the cache key: old (clipped) audio isn't reused
 
 VOICES = {
     ("interviewer", "es"): "Magpie-Multilingual.ES-US.Isabela.Neutral",
@@ -31,8 +32,26 @@ def _normalize(raw: bytes, dst: Path) -> None:
     src = TMP / f"tts_raw_{dst.stem}.wav"
     src.write_bytes(raw)
     try:
-        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-af", POSTPROCESS,
-                        "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", str(dst)], check=True)
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-loglevel",
+                "error",
+                "-i",
+                str(src),
+                "-af",
+                POSTPROCESS,
+                "-ar",
+                "24000",
+                "-ac",
+                "1",
+                "-c:a",
+                "pcm_s16le",
+                str(dst),
+            ],
+            check=True,
+        )
     finally:
         src.unlink(missing_ok=True)
 
@@ -49,11 +68,18 @@ def synthesize(text: str, lang: str, role: str = "interviewer") -> str:
     if path.exists():
         return key
     base = env("TTS_HTTP_URL").rsplit("/v1/", 1)[0]
-    r = httpx.post(f"{base}/v1/audio/synthesize",
-                   headers={"Authorization": f"Bearer {env('NVIDIA_API_KEY')}"},
-                   data={"text": text, "language": env(f"TTS_LANGUAGE_{lang.upper()}"), "voice": voice,
-                         "encoding": "LINEAR_PCM", "sample_rate_hz": env("TTS_SAMPLE_RATE_HZ", "44100")},
-                   timeout=120)
+    r = httpx.post(
+        f"{base}/v1/audio/synthesize",
+        headers={"Authorization": f"Bearer {env('NVIDIA_API_KEY')}"},
+        data={
+            "text": text,
+            "language": env(f"TTS_LANGUAGE_{lang.upper()}"),
+            "voice": voice,
+            "encoding": "LINEAR_PCM",
+            "sample_rate_hz": env("TTS_SAMPLE_RATE_HZ", "44100"),
+        },
+        timeout=120,
+    )
     if r.status_code != 200:
         raise RuntimeError(f"TTS HTTP {r.status_code}: {r.text[:200]}")
     tmp = path.with_suffix(".part.wav")

@@ -1,5 +1,6 @@
 """Audio: conversion to 16 kHz WAV, speech/silence detection with a RELATIVE threshold, and
 trailing-silence trimming (prevents Whisper hallucinations)."""
+
 import subprocess
 import wave
 from pathlib import Path
@@ -11,8 +12,10 @@ FRAME_S = 0.02
 
 def to_wav16k(src: str, dst: str) -> str:
     """Any audio (browser webm/opus, m4a, wav) → mono 16 kHz 16-bit WAV."""
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-ac", "1", "-ar", "16000",
-                    "-sample_fmt", "s16", dst], check=True)
+    subprocess.run(
+        ["ffmpeg", "-y", "-loglevel", "error", "-i", src, "-ac", "1", "-ar", "16000", "-sample_fmt", "s16", dst],
+        check=True,
+    )
     return dst
 
 
@@ -28,7 +31,7 @@ def frame_db(x: np.ndarray, sr: int) -> np.ndarray:
     if len(x) < n:
         return np.array([-100.0])
     frames = x[: len(x) // n * n].reshape(-1, n)
-    return 20 * np.log10(np.sqrt((frames ** 2).mean(axis=1) + 1e-12))
+    return 20 * np.log10(np.sqrt((frames**2).mean(axis=1) + 1e-12))
 
 
 def _runs(mask: np.ndarray):
@@ -58,11 +61,11 @@ def _open(mask, k):
 
 def speech_mask(db: np.ndarray) -> tuple[np.ndarray, float]:
     floor, speech = np.percentile(db, 10), np.percentile(db, 90)
-    if speech - floor < 6:            # no contrast: all silence (or all noise)
+    if speech - floor < 6:  # no contrast: all silence (or all noise)
         return np.zeros_like(db, dtype=bool), float(floor)
     thr = floor + 0.35 * (speech - floor)
-    mask = _close(db > thr, int(0.12 / FRAME_S))     # gaps < 120 ms (plosives)
-    mask = _open(mask, int(0.25 / FRAME_S))           # noises < 250 ms (clicks, keyboard)
+    mask = _close(db > thr, int(0.12 / FRAME_S))  # gaps < 120 ms (plosives)
+    mask = _open(mask, int(0.25 / FRAME_S))  # noises < 250 ms (clicks, keyboard)
     return mask, float(thr)
 
 
@@ -76,13 +79,22 @@ def analyze(path: str, min_pause_s: float = 0.5) -> dict:
     if not speech_runs:
         return {"has_speech": False, "duration_s": duration, "level_speech_db": round(float(np.percentile(db, 90)), 1)}
     onset, offset = speech_runs[0][0], speech_runs[-1][1]
-    pauses = [{"start_s": round(a * FRAME_S, 2), "end_s": round(b * FRAME_S, 2), "dur_s": round((b - a) * FRAME_S, 2)}
-              for v, a, b in runs
-              if not v and a * FRAME_S > onset and b * FRAME_S < offset and (b - a) * FRAME_S >= min_pause_s]
-    return {"has_speech": True, "duration_s": duration, "speech_onset_s": round(onset, 2),
-            "speech_offset_s": round(offset, 2), "trailing_silence_s": round(duration - offset, 2),
-            "pauses": pauses, "threshold_db": round(thr, 1),
-            "level_mean_db": round(float(np.mean(db)), 1), "level_speech_db": round(float(np.percentile(db, 90)), 1)}
+    pauses = [
+        {"start_s": round(a * FRAME_S, 2), "end_s": round(b * FRAME_S, 2), "dur_s": round((b - a) * FRAME_S, 2)}
+        for v, a, b in runs
+        if not v and a * FRAME_S > onset and b * FRAME_S < offset and (b - a) * FRAME_S >= min_pause_s
+    ]
+    return {
+        "has_speech": True,
+        "duration_s": duration,
+        "speech_onset_s": round(onset, 2),
+        "speech_offset_s": round(offset, 2),
+        "trailing_silence_s": round(duration - offset, 2),
+        "pauses": pauses,
+        "threshold_db": round(thr, 1),
+        "level_mean_db": round(float(np.mean(db)), 1),
+        "level_speech_db": round(float(np.percentile(db, 90)), 1),
+    }
 
 
 def trim_trailing(path: str, out_path: str, info: dict, keep_s: float = 0.4) -> str:

@@ -3,6 +3,7 @@
 Revision ID: 0002
 Revises: 0001
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -34,8 +35,9 @@ def upgrade():
     )
     op.add_column("sessions", sa.Column("application_id", sa.String(32), nullable=True))
     op.create_index("ix_sessions_application_id", "sessions", ["application_id"])
-    op.create_foreign_key("fk_sessions_application", "sessions", "applications", ["application_id"], ["id"],
-                          ondelete="CASCADE")
+    op.create_foreign_key(
+        "fk_sessions_application", "sessions", "applications", ["application_id"], ["id"], ondelete="CASCADE"
+    )
     op.alter_column("sessions", "job", server_default="", existing_type=sa.String(64))
 
 

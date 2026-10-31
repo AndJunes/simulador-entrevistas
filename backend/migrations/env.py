@@ -1,4 +1,5 @@
 """Alembic: toma la URL de la base desde .env (nunca hardcodeada)."""
+
 from alembic import context
 from sqlalchemy import create_engine
 

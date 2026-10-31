@@ -1,11 +1,12 @@
 """Central configuration. Reads the .env at the project root. Never logs secrets."""
+
 import os
 from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-ROOT = Path(__file__).resolve().parents[3]          # simulador-entrevistas/
+ROOT = Path(__file__).resolve().parents[3]  # simulador-entrevistas/
 BACKEND = ROOT / "backend"
 KNOWLEDGE = ROOT / "knowledge"
 CONFIG_DIR = BACKEND / "config"
@@ -18,7 +19,7 @@ for _d in (TTS_CACHE, TMP):
     _d.mkdir(parents=True, exist_ok=True)
 
 load_dotenv(ROOT / ".env")
-os.environ.setdefault("LANGSMITH_TRACING", "false")   # telemetry off (langsmith ships with LangGraph)
+os.environ.setdefault("LANGSMITH_TRACING", "false")  # telemetry off (langsmith ships with LangGraph)
 
 
 def env(name: str, default: str | None = None) -> str:
@@ -33,7 +34,7 @@ def env(name: str, default: str | None = None) -> str:
 
 @lru_cache
 def database_url() -> str:
-    return (f"postgresql+psycopg://{env('POSTGRES_USER')}:{env('POSTGRES_PASSWORD')}"
-            f"@{env('POSTGRES_HOST', 'localhost')}:{env('POSTGRES_PORT', '5432')}/{env('POSTGRES_DB')}")
-
-
+    return (
+        f"postgresql+psycopg://{env('POSTGRES_USER')}:{env('POSTGRES_PASSWORD')}"
+        f"@{env('POSTGRES_HOST', 'localhost')}:{env('POSTGRES_PORT', '5432')}/{env('POSTGRES_DB')}"
+    )

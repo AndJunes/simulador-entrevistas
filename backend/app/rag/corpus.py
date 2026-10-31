@@ -1,5 +1,6 @@
 """Reads the knowledge/**/*.md corpus: frontmatter + chunks per `##` heading.
 pm-knowledge-base convention: each chunk is prefixed with title and metadata."""
+
 import hashlib
 import re
 from pathlib import Path
@@ -35,14 +36,24 @@ def chunks_of(path: Path, meta: dict, body: str) -> list[dict]:
     for pos, part in enumerate(re.split(r"(?m)^## ", body)[1:]):
         heading, _, content = part.partition("\n")
         heading = heading.strip()
-        text = (f"[{title} · {meta['interview_type']}/{meta['language']} · {meta.get('doc_kind', '')}] "
-                f"## {heading}\n{content.strip()}")
-        out.append({
-            "id": f"{rel}#{heading}"[:300], "doc_path": rel, "heading": heading[:255],
-            "interview_type": str(meta["interview_type"]), "language": str(meta["language"]),
-            "doc_kind": str(meta.get("doc_kind", "")), "sources": list(meta.get("sources") or []),
-            "text": text, "content_hash": hashlib.sha256(text.encode()).hexdigest(), "position": pos,
-        })
+        text = (
+            f"[{title} · {meta['interview_type']}/{meta['language']} · {meta.get('doc_kind', '')}] "
+            f"## {heading}\n{content.strip()}"
+        )
+        out.append(
+            {
+                "id": f"{rel}#{heading}"[:300],
+                "doc_path": rel,
+                "heading": heading[:255],
+                "interview_type": str(meta["interview_type"]),
+                "language": str(meta["language"]),
+                "doc_kind": str(meta.get("doc_kind", "")),
+                "sources": list(meta.get("sources") or []),
+                "text": text,
+                "content_hash": hashlib.sha256(text.encode()).hexdigest(),
+                "position": pos,
+            }
+        )
     return out
 
 

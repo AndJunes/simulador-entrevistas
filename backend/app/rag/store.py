@@ -3,6 +3,7 @@
 Ingestion: only re-embeds chunks whose content changed (content_hash) and deletes the ones gone.
 Retrieval: filter by (interview_type, language) BEFORE the similarity search.
 """
+
 import logging
 
 from sqlalchemy import delete, select
@@ -18,32 +19,45 @@ log = logging.getLogger("rag")
 def ingest() -> dict:
     wanted = [c for path, meta, body in iter_docs() for c in chunks_of(path, meta, body)]
     with db() as s:
-        existing = {row.id: row.content_hash for row in s.execute(select(KnowledgeChunk.id, KnowledgeChunk.content_hash))}
+        existing = {
+            row.id: row.content_hash for row in s.execute(select(KnowledgeChunk.id, KnowledgeChunk.content_hash))
+        }
         changed = [c for c in wanted if existing.get(c["id"]) != c["content_hash"]]
         removed = set(existing) - {c["id"] for c in wanted}
         if removed:
             s.execute(delete(KnowledgeChunk).where(KnowledgeChunk.id.in_(removed)))
         if changed:
             vectors = embed([c["text"] for c in changed], "passage")
-            for c, v in zip(changed, vectors):
+            for c, v in zip(changed, vectors, strict=False):
                 s.merge(KnowledgeChunk(**c, embedding=v))
     stats = {"total": len(wanted), "embedded": len(changed), "removed": len(removed)}
     log.info("RAG ingest: %s", stats)
     return stats
 
 
-def retrieve(query: str, interview_type: str, language: str, k: int = 5,
-             exclude_kinds: tuple[str, ...] = ("rubrica",)) -> list[dict]:
+def retrieve(
+    query: str, interview_type: str, language: str, k: int = 5, exclude_kinds: tuple[str, ...] = ("rubrica",)
+) -> list[dict]:
     qv = embed([query], "query")[0]
     with db() as s:
-        stmt = (select(KnowledgeChunk, KnowledgeChunk.embedding.cosine_distance(qv).label("dist"))
-                .where(KnowledgeChunk.interview_type == interview_type, KnowledgeChunk.language == language)
-                .order_by("dist").limit(k))
+        stmt = (
+            select(KnowledgeChunk, KnowledgeChunk.embedding.cosine_distance(qv).label("dist"))
+            .where(KnowledgeChunk.interview_type == interview_type, KnowledgeChunk.language == language)
+            .order_by("dist")
+            .limit(k)
+        )
         if exclude_kinds:
             stmt = stmt.where(KnowledgeChunk.doc_kind.not_in(exclude_kinds))
         rows = s.execute(stmt).all()
-    return [{"id": r.KnowledgeChunk.id, "text": r.KnowledgeChunk.text, "doc_kind": r.KnowledgeChunk.doc_kind,
-             "score": round(1 - float(r.dist), 3)} for r in rows]
+    return [
+        {
+            "id": r.KnowledgeChunk.id,
+            "text": r.KnowledgeChunk.text,
+            "doc_kind": r.KnowledgeChunk.doc_kind,
+            "score": round(1 - float(r.dist), 3),
+        }
+        for r in rows
+    ]
 
 
 if __name__ == "__main__":
