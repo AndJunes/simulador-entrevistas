@@ -3,7 +3,7 @@
 # Build from the repository root so the RAG corpus ships with the image:
 #   docker build -f backend/Dockerfile -t simulador-api .
 
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /usr/local/bin/uv
 
